@@ -181,7 +181,7 @@ export const APP_HTML = /* html */ `<!doctype html>
   .say { position: relative; max-width: 86%; background: var(--card); border-radius: 14px; padding: 8px 14px; font: 600 14px var(--mono); color: var(--text); text-align: center; min-height: 1.45em; }
   .say::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--card); transform: rotate(45deg); border-radius: 2px; }
   .mdrag { transition: transform .45s cubic-bezier(.2, 1.6, .4, 1); }
-  .mdrag.held { transition: none; }
+  .mdrag.held { transition: transform .12s ease-out; position: relative; z-index: 10; }
   .moss { font-size: min(88px, 22vw); position: relative; width: 3.6em; height: 1.2em; cursor: grab; animation: moss-float 4.5s ease-in-out infinite; transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
   .moss-face { position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 1.1em; font-family: "JetBrains Mono", Consolas, monospace; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; color: #1f9d4a; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
   .moss-core { position: relative; display: inline-block; }
@@ -690,6 +690,8 @@ function show(name) {
   tab = name;
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'p-' + name));
   NAV.forEach((g, i) => { if (g.includes(name)) navLast[i] = name; });
+  // On the Moss tab a downward drag would also pull the whole mini app shut: switch Telegram's swipe-to-close off there.
+  try { if (name === 'moss') tg.disableVerticalSwipes(); else tg.enableVerticalSwipes(); } catch (e) {}
   closeMenu();
   drawNav();
   window.scrollTo(0, 0);
@@ -868,16 +870,24 @@ function mossTab() {
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
       if (!dragging && Math.hypot(dx, dy) > 8) { dragging = true; drag.classList.add('held'); mossReact('shocked', 'wheee', 60000); }
       if (dragging) {
-        const b = box.getBoundingClientRect();
-        const cx = Math.max(-b.width / 2 + 40, Math.min(b.width / 2 - 40, dx));
-        const cy = Math.max(-b.height / 2 + 10, Math.min(b.height / 2 - 30, dy));
-        drag.style.transform = 'translate(' + cx + 'px,' + cy + 'px) rotate(' + cx / 20 + 'deg)';
+        // Picked up he shrinks to 60%, so he can go anywhere on screen with his whole face still showing.
+        const mx = Math.min(innerWidth / 2 - 10, down.w * 0.3 + 6), my = down.h * 0.3 + 16;
+        const cx = Math.max(mx - down.cx, Math.min(innerWidth - mx - down.cx, dx));
+        const cy = Math.max(my - down.cy, Math.min(innerHeight - my - down.cy, dy));
+        drag.style.transform = 'translate(' + cx + 'px,' + cy + 'px) rotate(' + cx / 20 + 'deg) scale(.6)';
         return;
       }
     }
     mossLookAt(ev.clientX, ev.clientY);
   }, { passive: true });
-  el.addEventListener('pointerdown', (ev) => { down = { x: ev.clientX, y: ev.clientY }; dragging = false; el.setPointerCapture(ev.pointerId); });
+  el.addEventListener('pointerdown', (ev) => {
+    const r = el.getBoundingClientRect();
+    down = { x: ev.clientX, y: ev.clientY, cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, h: r.height };
+    dragging = false;
+    el.setPointerCapture(ev.pointerId);
+  });
+  // Stop the page (and Telegram behind it) scrolling while he's held.
+  el.addEventListener('touchmove', (ev) => ev.preventDefault(), { passive: false });
   const up = () => {
     if (!down) return;
     down = null;
