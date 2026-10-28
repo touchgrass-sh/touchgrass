@@ -1,5 +1,7 @@
 # The Deploy to Cloudflare button asks for these three. The setup page at https://touchgrass.sh/setup makes the two
 # keys for you and checks your bot token before you paste anything here.
-BOT_TOKEN=123456789:paste-the-token-from-BotFather
-WEBHOOK_SECRET=paste-the-setup-key-from-touchgrass.sh/setup
-HOOK_KEY=paste-the-agent-key-from-touchgrass.sh/setup
+# Left blank on purpose: Cloudflare's form pre-fills (and hides) whatever is here, so a placeholder would look like a
+# real value.
+BOT_TOKEN=
+WEBHOOK_SECRET=
+HOOK_KEY=
