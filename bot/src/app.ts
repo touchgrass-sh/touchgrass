@@ -78,8 +78,21 @@ export const APP_HTML = /* html */ `<!doctype html>
   /* tab bar */
   nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--card); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
   nav button { flex: 1; background: none; border: 0; color: var(--hint); font: inherit; font-size: 11px; padding: 4px 0; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
-  nav button .i { font-size: 19px; line-height: 1; }
+  nav button .i { height: 20px; display: flex; align-items: center; }
+  nav button .i svg, .mossgo .btn .i svg { width: 20px; height: 20px; display: block; }
+  #navmenu svg { width: 18px; height: 18px; display: block; }
+  .mossicon { font-size: 12px; font-weight: 800; line-height: 20px; }
   nav button.on { color: var(--grass); font-weight: 600; }
+  nav { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
+  nav button { position: relative; }
+  nav button .more { position: absolute; top: 0; left: calc(50% + 14px); font-size: 9px; opacity: .8; }
+  /* sub menu: long-press (phone) or hover (desktop) on a grouped tab */
+  #navmenu { position: fixed; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); min-width: 160px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.4); z-index: 7; display: none; }
+  #navmenu.on { display: block; animation: menu-up .15s ease-out; }
+  #navmenu button { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; border-radius: 10px; color: var(--text); font: inherit; font-size: 15px; padding: 10px 12px; text-align: left; cursor: pointer; }
+  #navmenu button:hover { background: var(--line); }
+  #navmenu button.on { color: var(--grass); font-weight: 600; }
+  @keyframes menu-up { from { opacity: 0; transform: translateY(6px); } }
   /* settings form (kept from the old settings page) */
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
   section > h2 + .row, section > h2 + .slider { border-top: 0; }
@@ -185,7 +198,7 @@ export const APP_HTML = /* html */ `<!doctype html>
   .mosshint { text-align: center; color: var(--hint); font: 12px var(--mono); margin: -6px 0 12px; }
   .mossgo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
   .mossgo .btn { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 2px; font-size: 12px; font-weight: 600; background: var(--card); border-color: transparent; white-space: nowrap; }
-  .mossgo .btn .i { font-size: 20px; line-height: 1; }
+  .mossgo .btn .i { height: 22px; display: flex; align-items: center; color: var(--grass); }
   @keyframes moss-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
   @keyframes moss-boop { 0% { scale: 1; } 40% { scale: .92 1.06; } 100% { scale: 1; } }
   @media (prefers-reduced-motion: reduce) { .moss, .moss.boop { animation: none; } }
@@ -291,16 +304,8 @@ export const APP_HTML = /* html */ `<!doctype html>
   <div class="panel" id="p-admin"></div>
 </main>
 
-<nav id="nav" class="hidden">
-  <button data-tab="moss"><span class="i mono" style="font-size:12px;font-weight:800;line-height:19px">[▮_▮]</span>Moss</button>
-  <button data-tab="today" class="on"><span class="i">🌱</span>Today</button>
-  <button data-tab="meals"><span class="i">🍽️</span>Meals</button>
-  <button data-tab="progress"><span class="i">📈</span>Progress</button>
-  <button data-tab="habits"><span class="i">✅</span>Habits</button>
-  <button data-tab="learn"><span class="i">📖</span>Guide</button>
-  <button data-tab="settings"><span class="i">⚙️</span>Settings</button>
-  <button data-tab="admin" class="hidden" id="admintab"><span class="i">🛠</span>Admin</button>
-</nav>
+<nav id="nav" class="hidden"></nav>
+<div id="navmenu"></div>
 
 <div id="status"></div>
 
@@ -651,7 +656,6 @@ function learn() {
 
 function admin() {
   if (!D.dev) return;
-  $('admintab').classList.remove('hidden');
   $('p-admin').innerHTML = '<div class="card"><h2>Plan <span class="right">test bot only</span></h2><div class="sub">switch to see exactly what each customer gets</div>' +
     '<div class="btns">' + PLANS.map((p) => '<button class="btn' + (p === D.plan ? ' primary' : '') + '" onclick="act(\\'plan\\',{plan:\\'' + p + '\\'})">' + (p === D.plan ? '✓ ' : '') + p + '</button>').join('') + '</div></div>' +
     '<div class="card"><h2>More test buttons</h2><div class="sub">/admin in the chat: fake agent run, window reminders, water nudge, recap, reset today</div></div>';
@@ -663,7 +667,7 @@ function render() {
   const chip = $('planchip');
   chip.textContent = D.plan;
   chip.className = 'chip ' + D.plan;
-  mossTab(); today(); mealsTab(); progress(); habits(); learn(); admin();
+  mossTab(); today(); mealsTab(); progress(); habits(); learn(); admin(); drawNav();
   bindCamera();
   const sudo = has('sudo');
   $('set_targets').classList.toggle('hidden', !sudo);
@@ -679,12 +683,88 @@ function render() {
 function show(name) {
   tab = name;
   document.querySelectorAll('.panel').forEach((p) => p.classList.toggle('on', p.id === 'p-' + name));
-  document.querySelectorAll('nav button').forEach((b) => b.classList.toggle('on', b.dataset.tab === name));
+  NAV.forEach((g, i) => { if (g.includes(name)) navLast[i] = name; });
+  closeMenu();
+  drawNav();
   window.scrollTo(0, 0);
   dirty();
 }
-document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => show(b.dataset.tab)));
 $('face').onclick = () => show('moss');
+
+// ---------- bottom bar ----------
+// Four buttons; the grouped ones (▴) open a sub menu on long-press (phone) or hover (desktop). A plain tap goes to
+// the tab last used in that group, and the button shows that tab's icon + name.
+// Menu buttons use line icons, not emoji (user, 2026-10-28; emoji are fine in content).
+const svg = (d) => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">' + d + '</svg>';
+const ICONS = {
+  moss: '<span class="mono mossicon">[▮_▮]</span>',
+  today: svg('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+  meals: svg('<path d="M7 3v18M4 3v5a3 3 0 0 0 6 0V3M18 21V3c-2.5 1-4 4-4 8h4"/>'),
+  progress: svg('<path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/>'),
+  habits: svg('<rect x="3" y="3" width="18" height="18" rx="4"/><path d="M8 12.5l3 3 5-6"/>'),
+  learn: svg('<path d="M2 5h6a4 4 0 0 1 4 4v11a3 3 0 0 0-3-3H2z"/><path d="M22 5h-6a4 4 0 0 0-4 4v11a3 3 0 0 1 3-3h7z"/>'),
+  settings: svg('<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>'),
+  admin: svg('<path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/>'),
+  nudge: svg('<path d="M13 2L4 14h7l-1 8 9-12h-7z"/>'),
+};
+const TABS = {
+  moss: [ICONS.moss, 'Moss'], today: [ICONS.today, 'Today'], meals: [ICONS.meals, 'Meals'], progress: [ICONS.progress, 'Progress'],
+  habits: [ICONS.habits, 'Habits'], learn: [ICONS.learn, 'Guide'], settings: [ICONS.settings, 'Settings'], admin: [ICONS.admin, 'Admin'],
+};
+const NAV = [['moss'], ['today', 'meals'], ['progress', 'habits'], ['learn', 'settings', 'admin']];
+const navLast = NAV.map((g) => g[0]);
+let menuG = -1, navPress = null, navHoverT = 0;
+const navTabs = (i) => NAV[i].filter((t) => t !== 'admin' || (D && D.dev));
+
+function drawNav() {
+  $('nav').innerHTML = NAV.map((g, i) => {
+    const t = navLast[i];
+    return '<button data-g="' + i + '"' + (t === tab ? ' class="on"' : '') + '><span class="i">' + TABS[t][0] + '</span>' + TABS[t][1] +
+      (navTabs(i).length > 1 ? '<span class="more">▴</span>' : '') + '</button>';
+  }).join('');
+}
+function openMenu(i) {
+  const tabs = navTabs(i);
+  if (tabs.length < 2) return closeMenu();
+  const m = $('navmenu');
+  m.innerHTML = tabs.map((t) => '<button data-tab="' + t + '"' + (t === tab ? ' class="on"' : '') + '><span>' + TABS[t][0] + '</span>' + TABS[t][1] + '</button>').join('');
+  m.classList.add('on');
+  menuG = i;
+  const b = $('nav').children[i].getBoundingClientRect();
+  m.style.left = Math.max(8, Math.min(innerWidth - m.offsetWidth - 8, b.left + b.width / 2 - m.offsetWidth / 2)) + 'px';
+}
+function closeMenu() { $('navmenu').classList.remove('on'); menuG = -1; }
+
+(function navEvents() {
+  const nav = $('nav'), menu = $('navmenu');
+  const g = (ev) => { const b = ev.target.closest('nav button'); return b ? +b.dataset.g : -1; };
+  nav.addEventListener('contextmenu', (ev) => ev.preventDefault());
+  nav.addEventListener('pointerdown', (ev) => {
+    const i = g(ev);
+    if (i < 0) return;
+    navPress = { i, long: false };
+    if (ev.pointerType !== 'mouse') navPress.t = setTimeout(() => {
+      navPress.long = true;
+      openMenu(i);
+      try { tg.HapticFeedback.impactOccurred('medium'); } catch (e) {}
+    }, 420);
+  });
+  nav.addEventListener('pointerup', (ev) => {
+    if (!navPress) return;
+    clearTimeout(navPress.t);
+    const p = navPress;
+    navPress = null;
+    if (!p.long && g(ev) === p.i) show(navLast[p.i]);
+  });
+  nav.addEventListener('pointercancel', () => { if (navPress) clearTimeout(navPress.t); navPress = null; });
+  // Desktop: hover opens the group's menu, leaving bar + menu closes it.
+  nav.addEventListener('pointerover', (ev) => { if (ev.pointerType !== 'mouse') return; const i = g(ev); if (i < 0) return; clearTimeout(navHoverT); if (i !== menuG) openMenu(i); });
+  menu.addEventListener('pointerover', () => clearTimeout(navHoverT));
+  [nav, menu].forEach((el) => el.addEventListener('pointerleave', (ev) => { if (ev.pointerType === 'mouse') navHoverT = setTimeout(closeMenu, 300); }));
+  menu.addEventListener('click', (ev) => { const b = ev.target.closest('button'); if (b) show(b.dataset.tab); });
+  document.addEventListener('pointerdown', (ev) => { if (menuG >= 0 && !ev.target.closest('nav, #navmenu')) closeMenu(); });
+})();
+drawNav();
 
 // ---------- Moss tab ----------
 // Same Moss as the site hero (site-zolt/src/components/home/moss.astro): the core [▮_▮] never moves, arms and
@@ -706,16 +786,16 @@ const FACES = {
   sleepy: { e: '-', m: '_', r: 'zZ' },
 };
 const POKES = [['celebrate', 'again!'], ['shocked', 'oi.'], ['flex', 'feel that bicep'], ['judging', 'really?'], ['sleepy', 'zzz… poke harder'], ['dead', 'you killed me'], ['angry', 'ok, stop'], ['off', 'going outside. bye']];
-// [tab or action, icon, label, small line, face, what he says on the way]
+// [tab or action (also its icon in ICONS), label, small line, face, what he says on the way]
 const GO = [
-  ['today', '🌱', 'Today', 'moves, water, caffeine', 'celebrate', 'today, let\\'s go'],
-  ['meals', '🍽️', 'Meals', 'what you ate', 'happy', 'snack report incoming'],
-  ['progress', '📈', 'Progress', 'weight, streaks, badges', 'proud', 'look how far you\\'ve come'],
-  ['habits', '✅', 'Habits', 'daily ticks', 'judging', 'did you, though?'],
-  ['learn', '📖', 'Guide', 'everything I can do', 'shocked', 'I can do HOW much?'],
-  ['settings', '⚙️', 'Settings', 'hours, goals, my name', 'flex', 'tune me up'],
-  ['nudge', '💪', 'Nudge me', 'a move in the chat', 'flex', 'check the chat. move.'],
-  ['admin', '🛠', 'Admin', 'test bot only', 'off', 'backstage pass'],
+  ['today', 'Today', 'moves, water, caffeine', 'celebrate', 'today, let\\'s go'],
+  ['meals', 'Meals', 'what you ate', 'happy', 'snack report incoming'],
+  ['progress', 'Progress', 'weight, streaks, badges', 'proud', 'look how far you\\'ve come'],
+  ['habits', 'Habits', 'daily ticks', 'judging', 'did you, though?'],
+  ['learn', 'Guide', 'everything I can do', 'shocked', 'I can do HOW much?'],
+  ['settings', 'Settings', 'hours, goals, my name', 'flex', 'tune me up'],
+  ['nudge', 'Nudge me', 'a move in the chat', 'flex', 'check the chat. move.'],
+  ['admin', 'Admin', 'test bot only', 'off', 'backstage pass'],
 ];
 const mossReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 let mossHover = null, mossBusy = 0, mossTimer = 0, mossPoke = 0;
@@ -761,13 +841,13 @@ function mossLookAt(x, y) {
 
 function mossTab() {
   $('mossgo').innerHTML = GO.filter((g) => g[0] !== 'admin' || D.dev).map((g, i) =>
-    '<button class="btn" data-go="' + i + '" title="' + esc(g[3]) + '"><span class="i">' + g[1] + '</span>' + esc(g[2]) + '</button>').join('');
+    '<button class="btn" data-go="' + i + '" title="' + esc(g[2]) + '"><span class="i">' + ICONS[g[0]] + '</span>' + esc(g[1]) + '</button>').join('');
   $('mossgo').querySelectorAll('button').forEach((b) => {
     const g = GO[+b.dataset.go];
-    b.onpointerenter = (ev) => { if (ev.pointerType !== 'touch') { mossHover = g[4]; if (Date.now() > mossBusy) mossRest(); } };
+    b.onpointerenter = (ev) => { if (ev.pointerType !== 'touch') { mossHover = g[3]; if (Date.now() > mossBusy) mossRest(); } };
     b.onpointerleave = () => { mossHover = null; if (Date.now() > mossBusy) mossRest(); };
     b.onclick = () => {
-      mossReact(g[4], g[5], 900);
+      mossReact(g[3], g[4], 900);
       haptic('success');
       setTimeout(() => (g[0] === 'nudge' ? act('nudge') : show(g[0])), g[0] === 'nudge' ? 0 : 550);
     };
