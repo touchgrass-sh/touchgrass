@@ -158,12 +158,12 @@ export const APP_HTML = /* html */ `<!doctype html>
   .scan .msg { flex: 1; text-align: center; }
   /* Moss tab: the site's hero Moss (site-zolt moss.astro) to play with, plus buttons to every other tab.
      Brand: floating face only, #1f9d4a, pink cheeks, soft shadow, never over green. */
-  .mossbox { position: relative; height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+  .mossbox { position: relative; height: 330px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   .say { position: relative; max-width: 86%; background: var(--card); border-radius: 14px; padding: 8px 14px; font: 600 14px var(--mono); color: var(--text); text-align: center; min-height: 1.45em; }
   .say::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--card); transform: rotate(45deg); border-radius: 2px; }
   .mdrag { transition: transform .45s cubic-bezier(.2, 1.6, .4, 1); }
   .mdrag.held { transition: none; }
-  .moss { font-size: 56px; position: relative; width: 5.2em; height: 1.2em; cursor: grab; animation: moss-float 4.5s ease-in-out infinite; transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
+  .moss { font-size: min(88px, 22vw); position: relative; width: 3.6em; height: 1.2em; cursor: grab; animation: moss-float 4.5s ease-in-out infinite; transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
   .moss-face { position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 1.1em; font-family: "JetBrains Mono", Consolas, monospace; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; color: #1f9d4a; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
   .moss-core { position: relative; display: inline-block; }
   .moss-side { position: absolute; top: 0; font-family: Gadugi, "Euphemia UCAS", Euphemia, "Noto Sans Canadian Aboriginal", "JetBrains Mono", Consolas, monospace; }
@@ -183,10 +183,9 @@ export const APP_HTML = /* html */ `<!doctype html>
   .moss-c1 { left: .62em; } .moss-c2 { right: .62em; }
   .moss.boop { animation: moss-boop .35s ease-out; }
   .mosshint { text-align: center; color: var(--hint); font: 12px var(--mono); margin: -6px 0 12px; }
-  .mossgo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-  .mossgo .btn { display: flex; align-items: center; gap: 8px; padding: 12px; text-align: left; background: var(--card); border-color: transparent; }
-  .mossgo .btn .i { font-size: 20px; }
-  .mossgo .btn small { display: block; color: var(--hint); font-size: 12px; }
+  .mossgo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .mossgo .btn { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 9px 2px; font-size: 12px; font-weight: 600; background: var(--card); border-color: transparent; white-space: nowrap; }
+  .mossgo .btn .i { font-size: 20px; line-height: 1; }
   @keyframes moss-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
   @keyframes moss-boop { 0% { scale: 1; } 40% { scale: .92 1.06; } 100% { scale: 1; } }
   @media (prefers-reduced-motion: reduce) { .moss, .moss.boop { animation: none; } }
@@ -715,7 +714,7 @@ const GO = [
   ['habits', '✅', 'Habits', 'daily ticks', 'judging', 'did you, though?'],
   ['learn', '📖', 'Guide', 'everything I can do', 'shocked', 'I can do HOW much?'],
   ['settings', '⚙️', 'Settings', 'hours, goals, my name', 'flex', 'tune me up'],
-  ['nudge', '💪', 'Nudge me now', 'a move in the chat', 'flex', 'check the chat. move.'],
+  ['nudge', '💪', 'Nudge me', 'a move in the chat', 'flex', 'check the chat. move.'],
   ['admin', '🛠', 'Admin', 'test bot only', 'off', 'backstage pass'],
 ];
 const mossReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -762,7 +761,7 @@ function mossLookAt(x, y) {
 
 function mossTab() {
   $('mossgo').innerHTML = GO.filter((g) => g[0] !== 'admin' || D.dev).map((g, i) =>
-    '<button class="btn" data-go="' + i + '"><span class="i">' + g[1] + '</span><span><b>' + esc(g[2]) + '</b><small>' + esc(g[3]) + '</small></span></button>').join('');
+    '<button class="btn" data-go="' + i + '" title="' + esc(g[3]) + '"><span class="i">' + g[1] + '</span>' + esc(g[2]) + '</button>').join('');
   $('mossgo').querySelectorAll('button').forEach((b) => {
     const g = GO[+b.dataset.go];
     b.onpointerenter = (ev) => { if (ev.pointerType !== 'touch') { mossHover = g[4]; if (Date.now() > mossBusy) mossRest(); } };
