@@ -30,7 +30,7 @@ export const APP_HTML = /* html */ `<!doctype html>
   body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; padding: 12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); }
   .mono { font-family: var(--mono); }
   header { display: flex; align-items: center; gap: 10px; padding: 4px 4px 12px; }
-  header .face { color: var(--grass); font: 700 18px var(--mono); }
+  header .face { color: var(--grass); font: 700 18px var(--mono); cursor: pointer; }
   header h1 { font-size: 17px; margin: 0; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .chip { font: 700 11px var(--mono); padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; white-space: nowrap; }
   .chip.user { color: var(--grass); } .chip.sudo { color: var(--amber); } .chip.root { color: var(--violet); }
@@ -156,6 +156,40 @@ export const APP_HTML = /* html */ `<!doctype html>
   .scan .guide { position: absolute; left: 5%; right: 5%; top: 27.5%; height: 45%; border: 2px solid var(--grass); border-radius: 14px; box-shadow: 0 0 0 999px rgba(0,0,0,.35); }
   .scan .scanbar { position: absolute; left: 12px; right: 12px; bottom: calc(24px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 8px; align-items: center; background: var(--card); border-radius: 14px; padding: 10px; }
   .scan .msg { flex: 1; text-align: center; }
+  /* Moss tab: the site's hero Moss (site-zolt moss.astro) to play with, plus buttons to every other tab.
+     Brand: floating face only, #1f9d4a, pink cheeks, soft shadow, never over green. */
+  .mossbox { position: relative; height: 230px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
+  .say { position: relative; max-width: 86%; background: var(--card); border-radius: 14px; padding: 8px 14px; font: 600 14px var(--mono); color: var(--text); text-align: center; min-height: 1.45em; }
+  .say::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--card); transform: rotate(45deg); border-radius: 2px; }
+  .mdrag { transition: transform .45s cubic-bezier(.2, 1.6, .4, 1); }
+  .mdrag.held { transition: none; }
+  .moss { font-size: 56px; position: relative; width: 5.2em; height: 1.2em; cursor: grab; animation: moss-float 4.5s ease-in-out infinite; transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
+  .moss-face { position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 1.1em; font-family: "JetBrains Mono", Consolas, monospace; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; color: #1f9d4a; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
+  .moss-core { position: relative; display: inline-block; }
+  .moss-side { position: absolute; top: 0; font-family: Gadugi, "Euphemia UCAS", Euphemia, "Noto Sans Canadian Aboriginal", "JetBrains Mono", Consolas, monospace; }
+  .moss-l { right: 100%; } .moss-r { left: 100%; }
+  .moss-mouth { display: inline-block; width: .6em; text-align: center; position: relative; }
+  .moss-mouth.frown, .moss-mouth.smile { color: transparent; }
+  .moss-mouth.frown::after { content: ""; position: absolute; left: .1em; right: .1em; top: .66em; height: .18em; border: .085em solid #1f9d4a; border-bottom: none; border-radius: .25em .25em 0 0; }
+  .moss-mouth.smile::after { content: ""; position: absolute; left: .1em; right: .1em; top: .58em; height: .2em; border: .085em solid #1f9d4a; border-top: none; border-radius: 0 0 .25em .25em; }
+  .moss-mouth.wide { transform: scale(.62) translateY(.12em); }
+  .moss-eye { display: inline-block; transition: transform .12s ease-out; }
+  .moss-eye.solid { width: .6em; color: transparent; position: relative; }
+  .moss-eye.solid::after { content: ""; position: absolute; left: .14em; right: .14em; top: .3em; bottom: .22em; border-radius: .04em; background: #1f9d4a; }
+  .moss-core.brows .moss-eye.solid::before { content: ""; position: absolute; left: .04em; right: .04em; top: .16em; height: .1em; border-radius: .04em; background: #1f9d4a; }
+  .moss-core.brows #mp_e1::before { transform: rotate(22deg); }
+  .moss-core.brows #mp_e2::before { transform: rotate(-22deg); }
+  .moss-cheek { position: absolute; top: .98em; width: .26em; height: .11em; border-radius: 50%; background: #ff8fa3; opacity: .8; }
+  .moss-c1 { left: .62em; } .moss-c2 { right: .62em; }
+  .moss.boop { animation: moss-boop .35s ease-out; }
+  .mosshint { text-align: center; color: var(--hint); font: 12px var(--mono); margin: -6px 0 12px; }
+  .mossgo { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .mossgo .btn { display: flex; align-items: center; gap: 8px; padding: 12px; text-align: left; background: var(--card); border-color: transparent; }
+  .mossgo .btn .i { font-size: 20px; }
+  .mossgo .btn small { display: block; color: var(--hint); font-size: 12px; }
+  @keyframes moss-float { 0%, 100% { translate: 0 0; } 50% { translate: 0 -10px; } }
+  @keyframes moss-boop { 0% { scale: 1; } 40% { scale: .92 1.06; } 100% { scale: 1; } }
+  @media (prefers-reduced-motion: reduce) { .moss, .moss.boop { animation: none; } }
 </style>
 </head>
 <body>
@@ -164,6 +198,14 @@ export const APP_HTML = /* html */ `<!doctype html>
 <div id="gate" class="hidden"></div>
 
 <main id="app" class="hidden">
+  <div class="panel" id="p-moss">
+    <div class="mossbox" id="mossbox">
+      <div class="say" id="moss_say">hi. poke me, drag me, or pick a spot</div>
+      <div class="mdrag" id="mdrag"><div class="moss" id="moss" role="img" aria-label="Moss"><div class="moss-face" aria-hidden="true"><span class="moss-core" id="moss_core"><span class="moss-side moss-l" id="mp_l"></span>[<span class="moss-eye solid" id="mp_e1">▮</span><span class="moss-mouth" id="mp_m">_</span><span class="moss-eye solid" id="mp_e2">▮</span>]<span class="moss-side moss-r" id="mp_r"></span><span class="moss-cheek moss-c1"></span><span class="moss-cheek moss-c2"></span></span></div></div></div>
+    </div>
+    <div class="mosshint">tilt your phone, he follows</div>
+    <div class="mossgo" id="mossgo"></div>
+  </div>
   <div class="panel on" id="p-today"></div>
   <div class="panel" id="p-meals"></div>
   <div class="panel" id="p-progress"></div>
@@ -251,6 +293,7 @@ export const APP_HTML = /* html */ `<!doctype html>
 </main>
 
 <nav id="nav" class="hidden">
+  <button data-tab="moss"><span class="i mono" style="font-size:12px;font-weight:800;line-height:19px">[▮_▮]</span>Moss</button>
   <button data-tab="today" class="on"><span class="i">🌱</span>Today</button>
   <button data-tab="meals"><span class="i">🍽️</span>Meals</button>
   <button data-tab="progress"><span class="i">📈</span>Progress</button>
@@ -621,7 +664,7 @@ function render() {
   const chip = $('planchip');
   chip.textContent = D.plan;
   chip.className = 'chip ' + D.plan;
-  today(); mealsTab(); progress(); habits(); learn(); admin();
+  mossTab(); today(); mealsTab(); progress(); habits(); learn(); admin();
   bindCamera();
   const sudo = has('sudo');
   $('set_targets').classList.toggle('hidden', !sudo);
@@ -642,6 +685,141 @@ function show(name) {
   dirty();
 }
 document.querySelectorAll('nav button').forEach((b) => (b.onclick = () => show(b.dataset.tab)));
+$('face').onclick = () => show('moss');
+
+// ---------- Moss tab ----------
+// Same Moss as the site hero (site-zolt/src/components/home/moss.astro): the core [▮_▮] never moves, arms and
+// extras hang off its sides, curved mouths + eyes are drawn in CSS. Eyes follow the finger/pointer (phone tilt too),
+// pokes step through POKES, he can be dragged and springs back, and each button below makes a face then opens its tab.
+const FACES = {
+  idle: { e: '▮', m: '_' },
+  happy: { e: '▮', m: '‿' },
+  blink: { e: '-', m: '_' },
+  celebrate: { l: '\\\\', e: '▮', m: '▽', r: '/' },
+  shocked: { e: '▮', m: 'o', r: '!' },
+  flex: { l: 'ᕦ', e: '▮', m: '_', r: 'ᕤ' },
+  judging: { e: '¬', m: '_' },
+  angry: { e: '▮', m: '︵', brows: true },
+  proud: { e: '▮', m: '‿', r: ' ✓' },
+  done: { e: '▮', m: '◡', r: '♪' },
+  off: { e: '▮', m: '_', r: '→' },
+  dead: { e: 'x', m: '_' },
+  sleepy: { e: '-', m: '_', r: 'zZ' },
+};
+const POKES = [['celebrate', 'again!'], ['shocked', 'oi.'], ['flex', 'feel that bicep'], ['judging', 'really?'], ['sleepy', 'zzz… poke harder'], ['dead', 'you killed me'], ['angry', 'ok, stop'], ['off', 'going outside. bye']];
+// [tab or action, icon, label, small line, face, what he says on the way]
+const GO = [
+  ['today', '🌱', 'Today', 'moves, water, caffeine', 'celebrate', 'today, let\\'s go'],
+  ['meals', '🍽️', 'Meals', 'what you ate', 'happy', 'snack report incoming'],
+  ['progress', '📈', 'Progress', 'weight, streaks, badges', 'proud', 'look how far you\\'ve come'],
+  ['habits', '✅', 'Habits', 'daily ticks', 'judging', 'did you, though?'],
+  ['learn', '📖', 'Guide', 'everything I can do', 'shocked', 'I can do HOW much?'],
+  ['settings', '⚙️', 'Settings', 'hours, goals, my name', 'flex', 'tune me up'],
+  ['nudge', '💪', 'Nudge me now', 'a move in the chat', 'flex', 'check the chat. move.'],
+  ['admin', '🛠', 'Admin', 'test bot only', 'off', 'backstage pass'],
+];
+const mossReduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+let mossHover = null, mossBusy = 0, mossTimer = 0, mossPoke = 0;
+
+function mossFace(name) {
+  const f = FACES[name] || FACES.idle;
+  $('mp_l').textContent = f.l || '';
+  $('mp_r').textContent = f.r || '';
+  const m = $('mp_m');
+  m.textContent = f.m;
+  m.classList.toggle('smile', f.m === '‿' || f.m === '◡');
+  m.classList.toggle('wide', f.m === '▽');
+  m.classList.toggle('frown', f.m === '︵');
+  $('moss_core').classList.toggle('brows', !!f.brows);
+  ['mp_e1', 'mp_e2'].forEach((id) => { $(id).textContent = f.e; $(id).classList.toggle('solid', f.e === '▮'); });
+}
+const mossRest = () => mossFace(mossHover || 'idle');
+// A reaction holds for a moment, then he settles back.
+function mossReact(face, line, ms) {
+  mossFace(face);
+  if (line) $('moss_say').textContent = line;
+  mossBusy = Date.now() + (ms || 1400);
+  clearTimeout(mossTimer);
+  mossTimer = setTimeout(mossRest, ms || 1400);
+  const el = $('moss');
+  el.classList.remove('boop');
+  void el.offsetWidth;
+  el.classList.add('boop');
+}
+// Eyes (and a little of the whole face) lean towards a point.
+function mossLook(dx, dy) {
+  if (mossReduced) return;
+  const len = Math.hypot(dx, dy) || 1;
+  const k = Math.min(1, len / 300);
+  const ex = (dx / len) * 6 * k, ey = (dy / len) * 5 * k;
+  ['mp_e1', 'mp_e2'].forEach((id) => ($(id).style.transform = 'translate(' + ex + 'px,' + ey + 'px)'));
+  $('moss').style.transform = 'translate(' + ex * 1.6 + 'px,' + ey * 1.2 + 'px) rotate(' + (dx / len) * 3 * k + 'deg)';
+}
+function mossLookAt(x, y) {
+  const r = $('moss').getBoundingClientRect();
+  mossLook(x - (r.left + r.width / 2), y - (r.top + r.height / 2));
+}
+
+function mossTab() {
+  $('mossgo').innerHTML = GO.filter((g) => g[0] !== 'admin' || D.dev).map((g, i) =>
+    '<button class="btn" data-go="' + i + '"><span class="i">' + g[1] + '</span><span><b>' + esc(g[2]) + '</b><small>' + esc(g[3]) + '</small></span></button>').join('');
+  $('mossgo').querySelectorAll('button').forEach((b) => {
+    const g = GO[+b.dataset.go];
+    b.onpointerenter = (ev) => { if (ev.pointerType !== 'touch') { mossHover = g[4]; if (Date.now() > mossBusy) mossRest(); } };
+    b.onpointerleave = () => { mossHover = null; if (Date.now() > mossBusy) mossRest(); };
+    b.onclick = () => {
+      mossReact(g[4], g[5], 900);
+      haptic('success');
+      setTimeout(() => (g[0] === 'nudge' ? act('nudge') : show(g[0])), g[0] === 'nudge' ? 0 : 550);
+    };
+  });
+}
+
+(function mossPlay() {
+  const box = $('mossbox'), drag = $('mdrag'), el = $('moss');
+  let down = null, dragging = false;
+  box.addEventListener('pointermove', (ev) => {
+    if (down) {
+      const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
+      if (!dragging && Math.hypot(dx, dy) > 8) { dragging = true; drag.classList.add('held'); mossReact('shocked', 'wheee', 60000); }
+      if (dragging) {
+        const b = box.getBoundingClientRect();
+        const cx = Math.max(-b.width / 2 + 40, Math.min(b.width / 2 - 40, dx));
+        const cy = Math.max(-b.height / 2 + 10, Math.min(b.height / 2 - 30, dy));
+        drag.style.transform = 'translate(' + cx + 'px,' + cy + 'px) rotate(' + cx / 20 + 'deg)';
+        return;
+      }
+    }
+    mossLookAt(ev.clientX, ev.clientY);
+  }, { passive: true });
+  el.addEventListener('pointerdown', (ev) => { down = { x: ev.clientX, y: ev.clientY }; dragging = false; el.setPointerCapture(ev.pointerId); });
+  const up = () => {
+    if (!down) return;
+    down = null;
+    if (dragging) {
+      dragging = false;
+      drag.classList.remove('held');
+      drag.style.transform = '';
+      mossReact('dead', 'put me down gently next time', 1600);
+      haptic('warning');
+      return;
+    }
+    const p = POKES[mossPoke++ % POKES.length];
+    mossReact(p[0], p[1]);
+    haptic('success');
+  };
+  el.addEventListener('pointerup', up);
+  el.addEventListener('pointercancel', up);
+  // Desktop: follow the pointer anywhere on the page while the tab is open.
+  addEventListener('pointermove', (ev) => { if (tab === 'moss' && !down && ev.pointerType !== 'touch') mossLookAt(ev.clientX, ev.clientY); }, { passive: true });
+  // Phones: tilt to make him look around.
+  addEventListener('deviceorientation', (ev) => { if (tab === 'moss' && !down && ev.gamma != null && ev.beta != null) mossLook(ev.gamma * 12, (ev.beta - 45) * 8); });
+  // Blink now and then, unless he's mid-reaction.
+  (function blink() {
+    if (tab === 'moss' && Date.now() > mossBusy && !mossHover) { mossFace('blink'); setTimeout(() => Date.now() > mossBusy && mossRest(), 140); }
+    setTimeout(blink, 2600 + Math.random() * 3200);
+  })();
+})();
 
 // ---------- camera (sudo): 📷 live barcode scan / 🏷️ label photo ----------
 // Runs in the web view, so nothing lands in the phone's camera roll. Results arrive in the chat as the usual
@@ -984,7 +1162,7 @@ Promise.all([call('/api/dash', 'GET'), call('/api/settings', 'GET')]).then(([das
   $('app').classList.remove('hidden');
   $('nav').classList.remove('hidden');
   const start = location.hash.slice(1);
-  if (['today', 'meals', 'progress', 'habits', 'learn', 'settings', 'admin'].includes(start)) show(start);
+  if (['moss', 'today', 'meals', 'progress', 'habits', 'learn', 'settings', 'admin'].includes(start)) show(start);
   if (new URLSearchParams(location.search).get('go') === 'scan') openScanner();
 }).catch((e) => {
   const g = $('gate');
