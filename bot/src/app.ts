@@ -71,7 +71,7 @@ export const APP_HTML = /* html */ `<!doctype html>
   .lock .min { background: none; border: 0; color: var(--hint); font-size: 18px; padding: 0 4px; cursor: pointer; }
   .lock ul { margin: 8px 0 0; padding-left: 18px; color: var(--hint); font-size: 13.5px; }
   .lock .ghost { margin-top: 10px; filter: blur(3px); opacity: .5; pointer-events: none; user-select: none; }
-  .lock .cta { margin-top: 10px; font-size: 13px; color: var(--amber); }
+  .lock .cta { display: block; width: 100%; margin-top: 10px; padding: 9px 12px; border: 1px solid currentColor; border-radius: 10px; background: none; font: inherit; font-size: 13px; font-weight: 600; text-align: left; color: var(--amber); cursor: pointer; }
   .lock.root .cta { color: var(--violet); }
   .lock.mini ul, .lock.mini .ghost, .lock.mini .cta { display: none; }
   .soon { border: 1px dashed var(--line); color: var(--hint); }
@@ -405,7 +405,13 @@ function lock(id, need, title, bullets, ghost) {
     '<button class="min" type="button" aria-label="minimise" onclick="toggleMin(\\'' + id + '\\')">' + (mini ? '▸' : '▾') + '</button></div>' +
     '<ul>' + bullets.map((b) => '<li>' + esc(b) + '</li>').join('') + '</ul>' +
     (ghost ? '<div class="ghost">' + ghost + '</div>' : '') +
-    '<div class="cta">⚡ unlock with ' + need + ' · touchgrass.sh</div></div>';
+    '<button class="cta" type="button" onclick="getPlan(\\'' + need + '\\')">⚡ unlock with ' + need + ' →</button></div>';
+}
+
+// Opens touchgrass.sh/upgrade in the browser (outside Telegram), on the plan picker with this plan ringed.
+function getPlan(need) {
+  const u = 'https://touchgrass.sh/upgrade?plan=' + need;
+  if (tg && tg.openLink) tg.openLink(u); else window.open(u, '_blank');
 }
 
 function soon(title, text) {

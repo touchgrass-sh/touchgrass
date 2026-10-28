@@ -13,7 +13,7 @@ import { AVATARS } from './avatar-data';
 import { adminButton, showAdmin } from './admin';
 import { getPlan, isDev } from './plan';
 import { askReset, exportData, resetButton } from './account';
-import { active, FREE_PHOTO, FREE_TEXT, GATE, LOCKED } from './hooks';
+import { active, FREE_PHOTO, FREE_TEXT, GATE, LOCKED, upgradeButtons } from './hooks';
 
 // Onboarding (BOT_SPEC §2) and /settings share the same pickers. While `onboarding` is set in state,
 // each pick moves to the next step; otherwise it goes back to the settings menu.
@@ -68,7 +68,7 @@ export async function handleUpdate(env: E, u: any, origin: string) {
   if (photos) {
     const caption = (msg.caption ?? '').trim();
     for (const a of await active(env)) if (await a.onPhoto?.(env, chat, photos, caption)) return;
-    return send(env, chat, FREE_PHOTO);
+    return send(env, chat, FREE_PHOTO, upgradeButtons(await getPlan(env)));
   }
   // Replies to the bot's own messages (e.g. correcting a meal card on sudo).
   if (msg?.text && msg.reply_to_message && !msg.text.startsWith('/')) {
@@ -96,6 +96,7 @@ async function onText(env: E, chat: number, text: string, origin: string) {
   }
   if (cmd === '/settings') return settingsMenu(env, chat);
   if (cmd === '/help') return help(env, chat);
+  if (cmd === '/upgrade') return upgrade(env, chat);
   // A pack's own command wins over core's (sudo's /today and /week say more than the free ones).
   if (cmd.startsWith('/')) {
     for (const a of await active(env)) {
@@ -124,7 +125,7 @@ async function onText(env: E, chat: number, text: string, origin: string) {
       if (c) return c.run(env, chat, text);
     }
     for (const a of await active(env)) if (await a.onCommand?.(env, chat, name, text)) return;
-    if (LOCKED.includes(name)) return send(env, chat, GATE);
+    if (LOCKED.includes(name)) return send(env, chat, GATE, upgradeButtons(await getPlan(env)));
   }
 
   const awaiting = await getAwaiting(env);
@@ -388,6 +389,22 @@ async function settingsMenu(env: E, chat: number, msgId?: number) {
   return msgId ? edit(env, chat, msgId, text, rows) : send(env, chat, text, rows);
 }
 
+/** What sudo/root add, with buttons to the upgrade page (it asks "bought yet?" first). */
+async function upgrade(env: E, chat: number) {
+  const plan = await getPlan(env);
+  if (plan === 'root') return send(env, chat, `${FACE.proud} you're on <b>root</b>. everything's unlocked already.`);
+  const sudo = '⚡ <b>sudo</b> · $19 one-off: food photos → calories + macros, barcodes + labels, UK food database, meal ideas, kitchen, calorie targets';
+  const root = '🛠 <b>root</b> · $49 one-off: everything in sudo, we set it up for you, e-ink screen setup';
+  return send(env, chat, [
+    plan === 'user' ? `${FACE.idle} you're on the free plan. two ways up:` : `${FACE.idle} you're on <b>sudo</b>. one more level:`,
+    '',
+    ...(plan === 'user' ? [sudo, ''] : []),
+    root,
+    '',
+    'same bot, same data. about 2 minutes, one GitHub button.',
+  ].join('\n'), upgradeButtons(plan));
+}
+
 async function help(env: E, chat: number) {
   const s = await getSettings(env);
   const addons = await active(env);
@@ -411,7 +428,7 @@ async function help(env: E, chat: number) {
     '/reset — wipe your data (asks first)',
     ...addons.flatMap((a) => (a.commands ?? []).filter((c) => c.help).map((c) => c.help)),
     '/help — this',
-    ...((await getPlan(env)) === 'user' ? ['', '⚡ food photos, calories and meal ideas come with sudo · touchgrass.sh'] : []),
+    ...((await getPlan(env)) === 'user' ? ['', '⚡ food photos, calories and meal ideas come with sudo · /upgrade'] : (await getPlan(env)) === 'sudo' ? ['', '🛠 /upgrade — what root adds'] : []),
     ...(isDev(env) ? ['', `🛠 /admin — test panel · plan: <b>${await getPlan(env)}</b>`] : []),
   ].join('\n'));
 }
@@ -463,6 +480,7 @@ export async function registerCommands(env: E) {
       { command: 'hook', description: 'connect your AI agent' },
       { command: 'export', description: 'download all your data' },
       { command: 'reset', description: 'wipe your data' },
+      ...((await getPlan(env)) === 'root' ? [] : [{ command: 'upgrade', description: 'get sudo or root' }]),
       ...(await active(env)).flatMap((a) => (a.commands ?? []).map(({ command, description }) => ({ command, description }))),
       { command: 'help', description: 'what I can do' },
     ],

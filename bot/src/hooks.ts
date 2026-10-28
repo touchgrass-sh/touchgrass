@@ -59,10 +59,19 @@ export interface Addon {
 
 /** Paid commands, known to core so the free plan can answer them with one line instead of /help. */
 export const LOCKED = ['eat', 'targets', 'deficit', 'ideas', 'breakfast', 'lunch', 'dinner', 'snack', 'kitchen', 'barcode', 'scan', 'snap'];
-export const GATE = "⚡ that's a sudo feature (AI food logging) · touchgrass.sh";
+export const GATE = "⚡ that's a sudo feature (AI food logging)";
 
 /** What the free plan says to a photo or a message it has no use for. No AI on free. */
-export const FREE_PHOTO = "📸 food photos and calorie tracking are a sudo feature · touchgrass.sh";
+export const FREE_PHOTO = "📸 food photos and calorie tracking are a sudo feature";
+
+/** Buttons under every "that's a paid feature" line and /upgrade. The page asks "bought yet?" and takes it from there. */
+export const UPGRADE_URL = 'https://touchgrass.sh/upgrade';
+export const upgradeButtons = (plan: Plan): Button[][] => [
+  plan === 'user'
+    ? [{ text: '⚡ Get sudo ($19)', url: `${UPGRADE_URL}?plan=sudo` }, { text: 'Get root ($49)', url: `${UPGRADE_URL}?plan=root` }]
+    : [{ text: 'Get root ($49)', url: `${UPGRADE_URL}?plan=root` }],
+  [{ text: '🔑 I already bought one', url: `${UPGRADE_URL}?step=key` }],
+];
 export const FREE_TEXT = "I'm not much of a chatter 🌱 I nudge you to move and log water, caffeine, weight and exercise. /help shows the rest";
 
 /** The packs this bot runs: installed paid packs its plan unlocks first (their text handlers win), then free. */
