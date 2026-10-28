@@ -27,7 +27,7 @@ export const APP_HTML = /* html */ `<!doctype html>
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; padding: 12px 12px calc(84px + env(safe-area-inset-bottom, 0px)); }
+  body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.45 -apple-system, system-ui, "Segoe UI", Roboto, sans-serif; padding: 12px 12px calc(100px + env(safe-area-inset-bottom, 0px)); }
   .mono { font-family: var(--mono); }
   header { display: flex; align-items: center; gap: 10px; padding: 4px 4px 12px; }
   header .face { color: var(--grass); font: 700 18px var(--mono); cursor: pointer; }
@@ -76,22 +76,28 @@ export const APP_HTML = /* html */ `<!doctype html>
   .lock.mini ul, .lock.mini .ghost, .lock.mini .cta { display: none; }
   .soon { border: 1px dashed var(--line); color: var(--hint); }
   /* tab bar */
-  nav { position: fixed; left: 0; right: 0; bottom: 0; display: flex; background: var(--card); border-top: 1px solid var(--line); padding: 6px 4px calc(6px + env(safe-area-inset-bottom, 0px)); z-index: 5; }
-  nav button { flex: 1; background: none; border: 0; color: var(--hint); font: inherit; font-size: 11px; padding: 4px 0; display: flex; flex-direction: column; align-items: center; gap: 2px; cursor: pointer; }
+  /* floating glass pill: blurred card, hairline border, top highlight, two-layer shadow */
+  nav { position: fixed; left: 12px; right: 12px; bottom: calc(10px + env(safe-area-inset-bottom, 0px)); display: flex; gap: 4px; padding: 6px; border-radius: 24px; background: color-mix(in srgb, var(--card) 80%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); border: 1px solid var(--line); box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 32px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.22); z-index: 5; }
+  nav button { flex: 1; background: none; border: 0; color: var(--hint); font: inherit; font-size: 11px; padding: 7px 0 10px; border-radius: 18px; display: flex; flex-direction: column; align-items: center; gap: 3px; cursor: pointer; transition: background .2s, color .2s, box-shadow .2s, transform .12s; }
   nav button .i { height: 20px; display: flex; align-items: center; }
   nav button .i svg, .mossgo .btn .i svg { width: 20px; height: 20px; display: block; }
   #navmenu svg { width: 18px; height: 18px; display: block; }
   .mossicon { font-size: 12px; font-weight: 800; line-height: 20px; }
+  /* active tab: green text + a short glowing bar under it; hairline dividers between buttons */
   nav button.on { color: var(--grass); font-weight: 600; }
+  nav button.on::after { content: ""; position: absolute; bottom: 2px; left: 50%; width: 16px; height: 3px; margin-left: -8px; border-radius: 3px; background: var(--grass); box-shadow: 0 0 8px var(--grass); }
+  nav button + button::before { content: ""; position: absolute; left: -2px; top: 28%; bottom: 28%; width: 1px; background: var(--line); }
+  nav button:active { transform: scale(.94); }
   nav { user-select: none; -webkit-user-select: none; -webkit-touch-callout: none; }
   nav button { position: relative; }
-  nav button .more { position: absolute; top: 0; left: calc(50% + 14px); font-size: 9px; opacity: .8; }
+  nav button .more { position: absolute; top: 3px; left: calc(50% + 14px); font-size: 9px; opacity: .8; }
   /* sub menu: long-press (phone) or hover (desktop) on a grouped tab */
-  #navmenu { position: fixed; bottom: calc(64px + env(safe-area-inset-bottom, 0px)); min-width: 160px; background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 6px; box-shadow: 0 8px 24px rgba(0,0,0,.4); z-index: 7; display: none; }
+  #navmenu { position: fixed; bottom: calc(86px + env(safe-area-inset-bottom, 0px)); min-width: 160px; background: color-mix(in srgb, var(--card) 86%, transparent); -webkit-backdrop-filter: blur(18px) saturate(1.5); backdrop-filter: blur(18px) saturate(1.5); border: 1px solid var(--line); border-radius: 18px; padding: 6px; box-shadow: inset 0 1px 0 rgba(255,255,255,.07), 0 12px 32px rgba(0,0,0,.42), 0 2px 6px rgba(0,0,0,.22); z-index: 7; display: none; }
   #navmenu.on { display: block; animation: menu-up .15s ease-out; }
   #navmenu button { display: flex; align-items: center; gap: 10px; width: 100%; background: none; border: 0; border-radius: 10px; color: var(--text); font: inherit; font-size: 15px; padding: 10px 12px; text-align: left; cursor: pointer; }
   #navmenu button:hover { background: var(--line); }
   #navmenu button.on { color: var(--grass); font-weight: 600; }
+  #navmenu button.on::after { content: ""; margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--grass); box-shadow: 0 0 6px var(--grass); }
   @keyframes menu-up { from { opacity: 0; transform: translateY(6px); } }
   /* settings form (kept from the old settings page) */
   .row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 11px 0; border-top: 1px solid var(--line); }
@@ -129,7 +135,7 @@ export const APP_HTML = /* html */ `<!doctype html>
   .times { display: flex; gap: 6px; align-items: center; }
   .times input { max-width: 7.5em; }
   #save { display: none; width: 100%; margin-top: 4px; padding: 13px; border: 0; border-radius: 12px; background: var(--grass); color: #0d1117; font: inherit; font-weight: 700; }
-  #status { position: fixed; left: 12px; right: 12px; bottom: calc(76px + env(safe-area-inset-bottom, 0px)); text-align: center; padding: 10px; border-radius: 12px; background: var(--card); box-shadow: 0 4px 18px rgba(0,0,0,.35); display: none; z-index: 6; }
+  #status { position: fixed; left: 12px; right: 12px; bottom: calc(92px + env(safe-area-inset-bottom, 0px)); text-align: center; padding: 10px; border-radius: 12px; background: var(--card); box-shadow: 0 4px 18px rgba(0,0,0,.35); display: none; z-index: 6; }
   #status.err { color: var(--err); }
   .hidden { display: none !important; }
   #gate { text-align: center; padding: 40px 16px; color: var(--hint); }
