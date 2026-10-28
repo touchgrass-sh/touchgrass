@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="docs/assets/moss-dark.gif">
-    <img src="docs/assets/moss-light.gif" width="480" alt="Moss, the touchgrass mascot: a terminal window that types 'git push gains' and flexes">
+    <img src="docs/assets/moss-light.gif" width="480" alt="Moss, the touchgrass mascot: a floating green face that looks around, smiles and cheers as 'sudo touch grass' types out underneath">
   </picture>
 </p>
 
