@@ -1,0 +1,28 @@
+{
+  "hooks": {
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": ["-s", "-m", "3", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Authorization: Bearer ${user_config.hook_key}", "--data-binary", "@-", "${user_config.bot_url}/hook/claude/start"],
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "curl",
+            "args": ["-s", "-m", "3", "-X", "POST", "-H", "Content-Type: application/json", "-H", "Authorization: Bearer ${user_config.hook_key}", "--data-binary", "@-", "${user_config.bot_url}/hook/claude/stop"],
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

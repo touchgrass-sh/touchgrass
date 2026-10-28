@@ -1,0 +1,26 @@
+{
+  "name": "touchgrass",
+  "displayName": "touchgrass",
+  "version": "0.1.0",
+  "description": "Tells your touchgrass Telegram bot when Claude Code starts and stops thinking, so it can nudge you to move, drink water and take a break while you wait.",
+  "author": { "name": "touchgrass.sh", "email": "hello@touchgrass.sh", "url": "https://touchgrass.sh" },
+  "homepage": "https://touchgrass.sh",
+  "repository": "https://github.com/touchgrass-sh/touchgrass",
+  "license": "MIT",
+  "keywords": ["health", "breaks", "telegram", "wellbeing", "hooks"],
+  "userConfig": {
+    "bot_url": {
+      "type": "string",
+      "title": "Bot URL",
+      "description": "Your touchgrass bot's address, e.g. https://touchgrass.you.workers.dev. Send /hook to your bot to get it.",
+      "required": true
+    },
+    "hook_key": {
+      "type": "string",
+      "title": "Hook key",
+      "description": "The key your bot shows when you send /hook. Kept in your system's secure storage.",
+      "required": true,
+      "sensitive": true
+    }
+  }
+}

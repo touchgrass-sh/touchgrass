@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Runs on YOUR Cloudflare account. The Deploy button (touchgrass.sh/setup) creates the database and asks for
+  // the three secrets; the zero database_id is a placeholder it replaces. Deploying by hand instead:
+  // `npx wrangler d1 create touchgrass`, paste the id here, then `npm run deploy`.
+  "name": "touchgrass",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-04-22",
+  "observability": { "enabled": true },
+
+  "d1_databases": [
+    { "binding": "DB", "database_name": "touchgrass", "database_id": "00000000-0000-0000-0000-000000000000", "migrations_dir": "migrations" }
+  ],
+  "ai": { "binding": "AI" },
+
+  // Every minute: agent-wait nudges need ~1 min resolution. Scheduled messages dedupe via the `sent` table.
+  "triggers": { "crons": ["* * * * *"] },
+
+  "vars": {
+    "VISION_MODEL": "@cf/qwen/qwen3.8-27b",
+    "TEXT_MODEL": "@cf/google/gemma-4-26b-a4b-it"
+  }
+  // Secrets (wrangler secret put): BOT_TOKEN, WEBHOOK_SECRET, HOOK_KEY
+}

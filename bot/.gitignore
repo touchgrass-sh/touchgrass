@@ -1,0 +1,11 @@
+node_modules/
+.wrangler/
+.dev.vars*
+!.dev.vars.example
+worker-configuration.d.ts
+.secrets.local
+wrangler.ours.jsonc
+addons-index.ours.ts
+src/addons/sudo/
+src/addons/root/
+src/addons/ours/

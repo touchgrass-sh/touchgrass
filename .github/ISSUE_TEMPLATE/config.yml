@@ -1,0 +1,5 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Setup help
+    url: https://touchgrass.sh/guide
+    about: Most setup questions are answered in the guide.

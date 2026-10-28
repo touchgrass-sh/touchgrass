@@ -1,0 +1,12 @@
+{
+  "name": "touchgrass",
+  "owner": { "name": "touchgrass.sh", "email": "hello@touchgrass.sh" },
+  "metadata": { "description": "sudo touch grass: a buddy that keeps you healthy while you build with AI." },
+  "plugins": [
+    {
+      "name": "touchgrass",
+      "source": "./plugin",
+      "description": "Nudges from your touchgrass Telegram bot while Claude Code thinks."
+    }
+  ]
+}

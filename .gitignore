@@ -1,0 +1,14 @@
+# The public repo is a whitelist: this folder also holds our private working files (site, brand, notes, packs).
+/*
+!/.gitignore
+!/README.md
+!/LICENSE
+!/CONTRIBUTING.md
+!/SECURITY.md
+!/.github/
+!/.claude-plugin/
+!/plugin/
+!/cli/
+!/docs/
+!/bot/
+node_modules/

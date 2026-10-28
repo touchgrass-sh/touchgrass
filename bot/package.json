@@ -1,0 +1,38 @@
+{
+  "name": "touchgrass-bot",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
+    "migrate": "wrangler d1 migrations apply touchgrass --remote",
+    "types": "wrangler types",
+    "check": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0",
+    "wrangler": "^4.147.0"
+  },
+  "dependencies": {
+    "zxing-wasm": "3.1.5"
+  },
+  "cloudflare": {
+    "bindings": {
+      "BOT_TOKEN": {
+        "description": "Your bot token from [@BotFather](https://t.me/BotFather). Check it first on [touchgrass.sh/setup](https://touchgrass.sh/setup)."
+      },
+      "WEBHOOK_SECRET": {
+        "description": "The **setup key** from [touchgrass.sh/setup](https://touchgrass.sh/setup). Copy it exactly."
+      },
+      "HOOK_KEY": {
+        "description": "The **agent key** from [touchgrass.sh/setup](https://touchgrass.sh/setup). Lets Claude Code or Codex tell your bot when it is busy."
+      },
+      "DB": {
+        "description": "Where your logs live. Keep the suggested name."
+      },
+      "AI": {
+        "description": "Workers AI, for food photos on paid plans. Free daily allowance; nothing to set."
+      }
+    }
+  }
+}
