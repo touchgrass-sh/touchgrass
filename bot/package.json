@@ -4,6 +4,7 @@
   "type": "module",
   "scripts": {
     "dev": "wrangler dev",
+    "predeploy": "node scripts/pack.mjs",
     "deploy": "wrangler d1 migrations apply DB --remote && wrangler deploy",
     "migrate": "wrangler d1 migrations apply touchgrass --remote",
     "types": "wrangler types",

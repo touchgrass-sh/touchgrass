@@ -7,6 +7,7 @@ import type { E } from './env';
 import { hook, tickNudges } from './nudge';
 import { tickReminders } from './log';
 import { active } from './hooks';
+import { getPlan } from './plan';
 import { avatarPng } from './avatar';
 import { getOwner, getState, setState } from './store';
 import { send } from './tg';
@@ -65,8 +66,8 @@ export default {
       if (png) return new Response(png, { headers: { 'content-type': 'image/png', 'cache-control': 'public, max-age=86400' } });
     }
 
-    // For the setup wizard's "connected ✓" check. Says nothing private.
-    if (path === '/health') return open(json({ ok: true, set_up: (await getState(env, 'origin')) !== null, claimed: (await getOwner(env)) !== null }));
+    // For the setup wizard's "connected ✓" check and touchgrass.sh/upgrade's "now on sudo ✓". Says nothing private.
+    if (path === '/health') return open(json({ ok: true, set_up: (await getState(env, 'origin')) !== null, claimed: (await getOwner(env)) !== null, plan: await getPlan(env) }));
 
     // Agent hook from the `touchgrass` CLI: { event: "start" | "stop", agent, session }.
     if (path === '/hook' && req.method === 'POST') {
