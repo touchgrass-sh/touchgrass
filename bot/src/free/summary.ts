@@ -140,7 +140,7 @@ export async function battery(env: E): Promise<{ pct: number; at: number } | nul
 export const windowReminders: Record<string, (env: E, chat: string | number) => Promise<unknown>> = {
   async soon(env, chat) {
     const s = await getSettings(env);
-    return sendWithGif(env, chat, 'food', `⏰ <b>15 min</b> until your eating window opens (${s.window_start}).`);
+    return sendWithGif(env, chat, 'soon', `⏰ <b>15 min</b> until your eating window opens (${s.window_start}).`);
   },
   async open(env, chat) {
     const s = await effective(env);
@@ -152,7 +152,7 @@ export const windowReminders: Record<string, (env: E, chat: string | number) => 
     const d = await dayData(env, local(s.tz).day);
     const food = await has(env, 'sudo');
     const left = s.kcal_target ? s.kcal_target - d.kcal : 0, pLeft = s.protein_target ? s.protein_target - d.p : 0;
-    return sendWithGif(env, chat, 'food', `🍽️ <b>30 min left to eat</b> (window closes ${s.window_end}).\n` +
+    return sendWithGif(env, chat, 'lastcall', `🍽️ <b>30 min left to eat</b> (window closes ${s.window_end}).\n` +
       (!food || !s.kcal_target ? '' : left > 0 ? `You've got ${r0(left)} kcal left${pLeft > 0 ? ` and ${r0(pLeft)}g protein still to go${pLeft > 25 ? ', something high-protein would be ideal (/snack)' : ''}` : ' and your protein is done ✅'}.` : `You're at your calories for today 👍`),
       s.late ? undefined : [[{ text: '🍔 Eating late tonight', data: 'lt' }]]);
   },

@@ -6,11 +6,14 @@ import { nowSec } from '../time';
 // free: reaction GIFs (ported from Jake). Forward any GIF to the bot, pick the ONE topic it's for, and messages on
 // that topic (morning, window, water, wins…) arrive with one on top. One topic per GIF on purpose (user, 2026-10-27:
 // Jake reused the same GIF across topics). Untagged GIFs are never sent. Telegram file ids only work in the bot that
-// received them. The built-in set is brand/gifs (terminal animations, two per topic).
+// received them. The built-in set is brand/gifs (Moss scenes). Each window message has its own topic (soon, food, lastcall,
+// fasting) so they never repeat the same GIF back to back (user, 2026-10-29).
 
 export const TAGS = {
   morning: '☀️ Morning',
   food: '🍽️ Food',
+  soon: '⏰ Window soon',
+  lastcall: '⏳ Last call',
   water: '💧 Water',
   fasting: '🌙 Fasting / night',
   win: '🎉 Celebrating',
