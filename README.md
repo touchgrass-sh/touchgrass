@@ -56,15 +56,16 @@ The core is open source (MIT) and does everything that doesn't need AI, so it ca
 | Agent-time nudges, streaks, badges | ✅ | ✅ | ✅ |
 | Water, caffeine, weight, waist, goals | ✅ | ✅ | ✅ |
 | Eating window, exercise, daily ticks | ✅ | ✅ | ✅ |
-| Morning message, dashboard, GIFs | ✅ | ✅ | ✅ |
+| Morning message, dashboard | ✅ | ✅ | ✅ |
 | Food photos, barcodes and labels → calories | | ✅ | ✅ |
 | UK food database, fixes, macros, meal ideas | | ✅ | ✅ |
 | Kitchen from receipt photos, weekly deficit | | ✅ | ✅ |
+| Moss reaction GIFs on your messages | | ✅ | ✅ |
 | Done-for-you setup | | | ✅ |
-| E-ink screen (works with TRMNL or a Kindle; hardware not included) | | | ✅ |
+| E-ink screen (works with TRMNL; Kindle in testing; hardware not included) | | | ✅ |
 | Unlimited daily ticks, group mode | | | ✅ |
 
-Paid packs are a one-off payment, no subscription, and add to the bot you already run. Details and prices on [touchgrass.sh](https://touchgrass.sh).
+Paid packs are a one-off payment, no subscription, and add to the bot you already run. Details on [touchgrass.sh/sudo](https://touchgrass.sh/sudo) and [touchgrass.sh/root](https://touchgrass.sh/root).
 
 ## What it costs to run
 

@@ -13,7 +13,7 @@ import { AVATARS } from './avatar-data';
 import { adminButton, showAdmin } from './admin';
 import { getPlan, isDev } from './plan';
 import { askReset, exportData, resetButton } from './account';
-import { active, FREE_PHOTO, FREE_TEXT, GATE, LOCKED, upgradeButtons } from './hooks';
+import { active, FREE_GIF, FREE_PHOTO, FREE_TEXT, GATE, LOCKED, upgradeButtons } from './hooks';
 
 // Onboarding (BOT_SPEC §2) and /settings share the same pickers. While `onboarding` is set in state,
 // each pick moves to the next step; otherwise it goes back to the settings menu.
@@ -61,7 +61,7 @@ export async function handleUpdate(env: E, u: any, origin: string) {
   if (cb) return onButton(env, cb, origin);
   if (msg?.animation) {
     for (const a of await active(env)) if (await a.onGif?.(env, chat, msg.animation.file_id)) return;
-    return;
+    return send(env, chat, FREE_GIF, upgradeButtons(await getPlan(env)));
   }
   // A photo, or an image sent as a file (uncompressed).
   const photos = msg?.photo?.length ? msg.photo : msg?.document?.mime_type?.startsWith('image/') ? [msg.document] : null;

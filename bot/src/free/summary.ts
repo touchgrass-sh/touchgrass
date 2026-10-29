@@ -8,7 +8,7 @@ import { addDays, currentWeight, dayData, dur, effective, fastState, history, jo
 import { deficitLines } from './deficit';
 import { exerciseGoal } from './exercise';
 import { celebrate, goalLines } from './goals';
-import { sendWithGif } from './gifs';
+import { sendTagged } from '../hooks';
 import { habitLines, habitReminder, tickButton } from './habits';
 import { tickReport } from './report';
 
@@ -116,7 +116,7 @@ export async function morning(env: E, chat: string | number) {
   if (def.length) lines.push('', ...def);
   if (goals.length) lines.push('', ...goals);
   // Always a morning GIF here; 'win' GIFs are only for milestones (one topic per GIF).
-  await sendWithGif(env, chat, 'morning', lines.join('\n'));
+  await sendTagged(env, chat, 'morning', lines.join('\n'));
   await celebrate(env, chat);
 
   const today = [`☀️ <b>Morning!</b>`, '', await fastText(env), '',
@@ -140,25 +140,25 @@ export async function battery(env: E): Promise<{ pct: number; at: number } | nul
 export const windowReminders: Record<string, (env: E, chat: string | number) => Promise<unknown>> = {
   async soon(env, chat) {
     const s = await getSettings(env);
-    return sendWithGif(env, chat, 'soon', `⏰ <b>15 min</b> until your eating window opens (${s.window_start}).`);
+    return sendTagged(env, chat, 'soon', `⏰ <b>15 min</b> until your eating window opens (${s.window_start}).`);
   },
   async open(env, chat) {
     const s = await effective(env);
     const food = await has(env, 'sudo');
-    return sendWithGif(env, chat, 'food', `✅ <b>Eating window open</b> until ${s.window_end}.${food ? ' Send a photo of whatever you eat.' : ''}`);
+    return sendTagged(env, chat, 'food', `✅ <b>Eating window open</b> until ${s.window_end}.${food ? ' Send a photo of whatever you eat.' : ''}`);
   },
   async last30(env, chat) {
     const s = await effective(env);
     const d = await dayData(env, local(s.tz).day);
     const food = await has(env, 'sudo');
     const left = s.kcal_target ? s.kcal_target - d.kcal : 0, pLeft = s.protein_target ? s.protein_target - d.p : 0;
-    return sendWithGif(env, chat, 'lastcall', `🍽️ <b>30 min left to eat</b> (window closes ${s.window_end}).\n` +
+    return sendTagged(env, chat, 'lastcall', `🍽️ <b>30 min left to eat</b> (window closes ${s.window_end}).\n` +
       (!food || !s.kcal_target ? '' : left > 0 ? `You've got ${r0(left)} kcal left${pLeft > 0 ? ` and ${r0(pLeft)}g protein still to go${pLeft > 25 ? ', something high-protein would be ideal (/snack)' : ''}` : ' and your protein is done ✅'}.` : `You're at your calories for today 👍`),
       s.late ? undefined : [[{ text: '🍔 Eating late tonight', data: 'lt' }]]);
   },
   async close(env, chat) {
     const s = await getSettings(env);
-    return sendWithGif(env, chat, 'fasting', `🔒 <b>Fast started.</b> No food until ${s.window_start} tomorrow.\nWater, black coffee and plain tea are fine. 💪`);
+    return sendTagged(env, chat, 'fasting', `🔒 <b>Fast started.</b> No food until ${s.window_start} tomorrow.\nWater, black coffee and plain tea are fine. 💪`);
   },
   morning: (env, chat) => morning(env, chat),
 };

@@ -3,7 +3,6 @@ import type { E } from '../env';
 import { burpeesCmd, exerciseText, goalDone, skipCmd } from './exercise';
 import { parseWeight, weigh, weightCmd } from './body';
 import { goalCmd, parseWaist, waist, waistCmd } from './goals';
-import { gifsCmd, gifTag, onGif, sendWithGif, TAGS, type Tag } from './gifs';
 import { looksLikeTick, tickCommand, tickTap, untickTap } from './habits';
 import { lateButtons, lateCmd } from './late';
 import { weekCmd } from './report';
@@ -13,8 +12,9 @@ import { send } from '../tg';
 import { getSettings, getState } from '../store';
 
 // The free pack: everything from Jake that needs no AI. Weight, waist, goals and milestones, eating window + /late,
-// skipping and burpees, daily ticks, reaction GIFs, the morning message, /today /week /report. Open source and
-// always on (src/hooks.ts runs it after any paid pack). The paid packs in src/addons/ add the AI food features.
+// skipping and burpees, daily ticks, the morning message, /today /week /report. Open source and
+// always on (src/hooks.ts runs it after any paid pack). The paid packs in src/addons/ add the AI food features
+// and reaction GIFs (moved to sudo, user 2026-10-29).
 
 export const free: Addon = {
   plan: 'user',
@@ -39,17 +39,13 @@ export const free: Addon = {
     { command: 'burpees', description: 'log burpees', help: '', run: burpeesCmd },
     { command: 'burpee', description: 'log burpees', help: '', run: burpeesCmd },
     { command: 'app', description: 'open the dashboard', help: '', run: async (env, chat) => send(env, chat, 'Your dashboard 👇', [[{ text: '📊 Open dashboard', app: `${await appOrigin(env)}/app` }]]) },
-    { command: 'gifs', description: 'your reaction GIFs', help: '', run: (env, chat) => gifsCmd(env, chat) },
   ],
   buttons: {
     xg: goalDone,
     ck: tickTap,
     cx: untickTap,
-    gt: gifTag,
     ...lateButtons,
   },
-  onGif,
-  sendTagged: (env, chat, tag, text, rows) => sendWithGif(env, chat, (tag in TAGS ? tag : 'chat') as Tag, text, rows),
   async onCommand(env, chat, name) {
     // One command per habit, e.g. /inhaler.
     if ((await getSettings(env)).habits.some((h) => h.id === name)) {

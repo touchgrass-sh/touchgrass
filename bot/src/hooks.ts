@@ -58,8 +58,9 @@ export interface Addon {
 }
 
 /** Paid commands, known to core so the free plan can answer them with one line instead of /help. */
-export const LOCKED = ['eat', 'targets', 'deficit', 'ideas', 'breakfast', 'lunch', 'dinner', 'snack', 'kitchen', 'barcode', 'scan', 'snap'];
-export const GATE = "⚡ that's a sudo feature (AI food logging)";
+export const LOCKED = ['eat', 'targets', 'deficit', 'ideas', 'breakfast', 'lunch', 'dinner', 'snack', 'kitchen', 'barcode', 'scan', 'snap', 'gifs'];
+export const GATE = "⚡ that's a sudo feature (AI food logging + reaction GIFs)";
+export const FREE_GIF = "🎞️ reaction GIFs are a sudo feature";
 
 /** What the free plan says to a photo or a message it has no use for. No AI on free. */
 export const FREE_PHOTO = "📸 food photos and calorie tracking are a sudo feature";

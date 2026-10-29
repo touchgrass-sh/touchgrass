@@ -309,7 +309,7 @@ export const APP_HTML = /* html */ `<!doctype html>
         <div id="habits_list"></div>
         <button class="btn" type="button" id="habit_add" style="margin-top:8px">+ add one</button>
       </section>
-      <section>
+      <section id="set_gifs">
         <h2>Reaction GIFs</h2>
         <div class="row"><label>GIF style<small>Paper white matches the avatar</small></label><div class="seg" id="gif_theme"></div></div>
         <div class="gifprev"><div class="gp-light" data-v="light"><i></i><b>[▮‿▮]</b><span>paper white</span></div><div class="gp-dark" data-v="dark"><i></i><b>[▮‿▮]</b><span>terminal dark</span></div></div>
@@ -775,6 +775,7 @@ function render() {
   $('set_targets').classList.toggle('hidden', !sudo);
   $('set_sources').classList.toggle('hidden', !sudo);
   $('set_screen').classList.toggle('hidden', !has('root'));
+  $('set_gifs').classList.toggle('hidden', !has('sudo'));
   if (D.sources) {
     $('src_cofid').textContent = 'CoFID, UK government data · ' + D.sources.counts.cofid.toLocaleString('en-GB') + ' foods';
     $('src_saved').textContent = 'barcodes and labels you scanned · ' + D.sources.counts.saved;

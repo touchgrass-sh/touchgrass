@@ -2,7 +2,7 @@ import type { E, Habit } from '../env';
 import { getSettings } from '../store';
 import { edit, esc, send, type Button } from '../tg';
 import { local, nowSec } from '../time';
-import { sendWithGif } from './gifs';
+import { sendTagged } from '../hooks';
 
 // free: daily tick-offs (ported from Jake's checklist, e.g. an inhaler). Habits live in settings; each one gets
 // /<id>, typing its name ("inhaler", "took my inhaler"), a button on the morning message and a reminder at its time
@@ -70,7 +70,7 @@ export async function looksLikeTick(env: E, text: string) {
 /** Cron: at a habit's reminder time, nudge once if it isn't ticked yet. */
 export async function habitReminder(env: E, chat: string | number, h: Habit) {
   if ((await checkStatus(env, h.id)).done) return;
-  return sendWithGif(env, chat, 'nudge', `${h.icon} <b>${esc(h.label)}</b>: not ticked off yet today.`, tickButton(h));
+  return sendTagged(env, chat, 'nudge', `${h.icon} <b>${esc(h.label)}</b>: not ticked off yet today.`, tickButton(h));
 }
 
 /** Lines for /today: "🫁 Inhaler ✅ 08:12". */

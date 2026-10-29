@@ -3,7 +3,7 @@ import { getSettings, getState, saveSettings, setState } from '../store';
 import { send } from '../tg';
 import { local, nowSec } from '../time';
 import { currentWeight, journey } from './days';
-import { sendWithGif } from './gifs';
+import { sendTagged } from '../hooks';
 
 // free: goals and milestones (ported from Jake's goals.ts). Weight and waist steps come from settings
 // (weight_goals / waist_goals, highest first; the last is the goal). No deadlines by design. A 🎉 fires once per
@@ -70,7 +70,7 @@ export async function celebrate(env: E, chat: number | string) {
   }
   if (!fresh.length) return;
   await setState(env, 'milestones', JSON.stringify([...done]));
-  await sendWithGif(env, chat, 'win', fresh.join('\n'));
+  await sendTagged(env, chat, 'win', fresh.join('\n'));
 }
 
 export async function waist(env: E, chat: number, cm: number | null) {
