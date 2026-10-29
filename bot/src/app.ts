@@ -49,6 +49,18 @@ export const APP_HTML = /* html */ `<!doctype html>
   .btn:active { transform: scale(.97); }
   .btn.primary { background: var(--grass); border-color: var(--grass); color: #0d1117; font-weight: 700; }
   .btn.wide { width: 100%; }
+  /* Connect screen */
+  .cx-os { justify-content: flex-start; margin: 4px 0 2px; }
+  .cx-step { margin-top: 12px; }
+  .cx-step > .sub { margin-bottom: 4px; }
+  .cx-code { display: flex; align-items: center; gap: 8px; background: var(--bg); border: 1px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 10px; }
+  .cx-code code { flex: 1; min-width: 0; font: 13px/1.4 var(--mono); word-break: break-all; }
+  .cx-code .btn { flex: none; padding: 6px 10px; font-size: 13px; }
+  .cx-live { display: flex; align-items: center; gap: 10px; }
+  .cx-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--amber); flex: none; animation: cxpulse 1.4s infinite; }
+  .cx-live.on .cx-dot { background: var(--grass); animation: none; }
+  @keyframes cxpulse { 50% { opacity: .3; } }
+  @media (prefers-reduced-motion: reduce) { .cx-dot { animation: none; } }
   .scroll { display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px; margin-top: 10px; scrollbar-width: none; }
   .scroll .btn { flex: none; font-size: 13px; }
   .list { margin: 8px 0 0; padding: 0; list-style: none; }
@@ -181,7 +193,9 @@ export const APP_HTML = /* html */ `<!doctype html>
   .say { position: relative; max-width: 86%; background: var(--card); border-radius: 14px; padding: 8px 14px; font: 600 14px var(--mono); color: var(--text); text-align: center; min-height: 1.45em; }
   .say::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--card); transform: rotate(45deg); border-radius: 2px; }
   .mdrag { transition: transform .45s cubic-bezier(.2, 1.6, .4, 1); }
-  .mdrag.held { transition: transform .12s ease-out; position: relative; z-index: 10; }
+  .mdrag.held { transition: none; position: relative; z-index: 10; }
+  /* held: no bobbing, no boop, no eye-lean, so only the drag moves him */
+  .mdrag.held .moss { animation: none; transition: none; }
   .moss { font-size: min(88px, 22vw); position: relative; width: 3.6em; height: 1.2em; cursor: grab; animation: moss-float 4.5s ease-in-out infinite; transition: transform .25s cubic-bezier(.2, .8, .2, 1); }
   .moss-face { position: absolute; top: 0; left: 50%; transform: translateX(-50%); height: 1.1em; font-family: "JetBrains Mono", Consolas, monospace; font-weight: 800; line-height: 1.1; letter-spacing: -.02em; white-space: nowrap; color: #1f9d4a; filter: drop-shadow(0 8px 14px rgba(0, 0, 0, .45)); }
   .moss-core { position: relative; display: inline-block; }
@@ -303,10 +317,15 @@ export const APP_HTML = /* html */ `<!doctype html>
         <div class="row"><label for="weather_lat">Latitude<small>empty = no weather</small></label><input id="weather_lat" type="number" inputmode="decimal" step="0.01" placeholder="—"></div>
         <div class="row"><label for="weather_lon">Longitude</label><input id="weather_lon" type="number" inputmode="decimal" step="0.01" placeholder="—"></div>
       </section>
+      <section>
+        <h2>Coding agent</h2>
+        <div class="row"><label>Claude Code<small>nudges while it thinks</small></label><button class="btn" type="button" onclick="show('connect')">Connect →</button></div>
+      </section>
       <div id="food_lock"></div>
       <button id="save" type="submit">Save</button>
     </form>
   </div>
+  <div class="panel" id="p-connect"></div>
   <div class="panel" id="p-admin"></div>
 </main>
 
@@ -662,9 +681,78 @@ function learn() {
     h += sec('📊', 'Summaries', '<span class="mono">/today</span>, <span class="mono">/week</span>, ' + (has('sudo') ? '<span class="mono">/deficit</span>, <span class="mono">/targets</span>, ' : '') + '<span class="mono">/window</span>, <span class="mono">/undo</span>. The morning message has yesterday, your streaks and today.');
   }
   h += sec('💧', 'Water & caffeine', 'Type "water", "500ml" or "2 glasses of water", or tap the buttons. Type a drink ("flat white", "2 coffees") for caffeine. Water checks only nudge when you are behind.', !has('sudo'));
-  h += sec('💪', 'Agent-time moves', 'When your coding agent is busy, I nudge you to move. ✅ done / skip / snooze. /hook connects Claude Code or Codex.');
+  h += sec('💪', 'Agent-time moves', 'When your coding agent is busy, I nudge you to move. ✅ done / skip / snooze. <a href="#connect" onclick="show(\\'connect\\');return false" style="color:var(--grass)">Connect Claude Code →</a>');
   $('p-learn').innerHTML = h;
 }
+
+// ---------- connect (not in the bar: opens from /hook, onboarding, Settings and the Guide) ----------
+// Lives here, in the owner's own mini app, so the agent key never leaves their bot. Telegram Desktop opens this same
+// screen on the computer where Claude Code runs, so it's copy + paste. Polls /api/connect until the first ping lands.
+let CX = null, cxOs = null, cxShow = false, cxTimer = 0;
+const CX_OS = { mac: 'Mac / Linux', win: 'Windows', plugin: 'Claude plugin' };
+const cxGuessOs = () => (/Windows/i.test(navigator.userAgent) ? 'win' : 'mac');
+const ago = (s) => (s < 90 ? 'just now' : s < 5400 ? Math.round(s / 60) + ' min ago' : s < 129600 ? Math.round(s / 3600) + 'h ago' : Math.round(s / 86400) + ' days ago');
+function cxLine(label, show, copy) {
+  return '<div class="cx-step"><div class="sub">' + label + '</div><div class="cx-code"><code>' + esc(show) + '</code>' +
+    '<button class="btn" type="button" data-copy="' + esc(copy == null ? show : copy) + '">Copy</button></div></div>';
+}
+function connectTab() {
+  const el = $('p-connect');
+  if (!CX) { el.innerHTML = '<div class="card"><div class="sub">loading…</div></div>'; return; }
+  const os = cxOs || cxGuessOs();
+  const key = cxShow ? CX.key : CX.key.slice(0, 4) + '••••••••••••';
+  const live = CX.last
+    ? '<div class="cx-live on"><span class="cx-dot"></span><div><b>✓ connected</b><div class="sub">last ping ' + ago(CX.now - CX.last.ts) + ' · ' + (CX.last.agent === 'test' ? 'connect check' : esc(CX.last.agent)) + '</div></div></div>'
+    : '<div class="cx-live"><span class="cx-dot"></span><div><b>waiting for the first ping…</b><div class="sub">this flips to ✓ the moment your computer connects</div></div></div>';
+  let h = '<div class="card"><h2>Agent status</h2>' + live + '</div>';
+  h += '<div class="card"><h2>Connect your coding agent</h2>' +
+    '<div class="sub">Do this on the computer where you run Claude Code. Open this bot in <b>Telegram Desktop</b> there and this same screen lets you copy + paste. Optional: without it I still do water, caffeine and your daily recap.</div>' +
+    '<div class="seg cx-os">' + Object.keys(CX_OS).map((k) => '<button type="button" data-os="' + k + '" aria-pressed="' + (k === os) + '">' + CX_OS[k] + '</button>').join('') + '</div>';
+  const conn = 'touchgrass connect ' + CX.url + ' ';
+  if (os === 'plugin') {
+    h += cxLine('1 · in Claude Code, add the marketplace', '/plugin marketplace add touchgrass-sh/touchgrass') +
+      cxLine('2 · install the plugin', '/plugin install touchgrass@touchgrass') +
+      '<div class="sub" style="margin-top:12px">3 · it asks for two things, paste these:</div>' +
+      cxLine('bot address', CX.url) + cxLine('agent key', key, CX.key);
+  } else {
+    h += cxLine('1 · install the helper (' + (os === 'win' ? 'PowerShell' : 'Terminal') + ')', os === 'win' ? 'irm touchgrass.sh/install.ps1 | iex' : 'curl -fsSL touchgrass.sh | sh') +
+      cxLine('2 · connect it (also hooks up Claude Code)', conn + key, conn + CX.key);
+  }
+  h += '<div class="btns"><button class="btn" type="button" data-cx="key">' + (cxShow ? 'hide key' : 'show key') + '</button></div>' +
+    '<div class="sub" style="margin-top:10px">Keep the key to yourself: anyone with it can make your bot think your agent is busy.</div></div>';
+  el.innerHTML = h;
+}
+async function cxLoad() {
+  try { CX = await call('/api/connect', 'GET'); } catch (e) { $('p-connect').innerHTML = '<div class="card"><div class="sub">[x_x] ' + esc(e.message) + '</div></div>'; return; }
+  connectTab();
+}
+// Poll only while the screen is open and nothing has pinged yet (or the last ping is old, e.g. a second computer).
+function cxPoll() {
+  clearTimeout(cxTimer);
+  if (tab !== 'connect' || document.hidden) return;
+  const was = CX ? (CX.last ? CX.last.ts : 0) : null;
+  cxLoad().then(() => {
+    if (was !== null && CX && CX.last && CX.last.ts !== was) haptic('success');
+    cxTimer = setTimeout(cxPoll, CX && CX.last ? 10000 : 3000);
+  });
+}
+function copyText(text, btn) {
+  const done = () => { btn.textContent = 'Copied ✓'; haptic('success'); setTimeout(() => (btn.textContent = 'Copy'), 1500); };
+  const fallback = () => {
+    const t = document.createElement('textarea');
+    t.value = text; t.style.position = 'fixed'; t.style.opacity = '0';
+    document.body.appendChild(t); t.select();
+    try { document.execCommand('copy'); done(); } catch (e) { status('[x_x] copy failed, long-press to select', true); }
+    t.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, fallback); else fallback();
+}
+$('p-connect').addEventListener('click', (e) => {
+  const c = e.target.closest('[data-copy]'), o = e.target.closest('[data-os]'), k = e.target.closest('[data-cx=key]');
+  if (c) copyText(c.dataset.copy, c);
+  else if (o) { cxOs = o.dataset.os; connectTab(); }
+  else if (k) { cxShow = !cxShow; connectTab(); }
+});
 
 function admin() {
   if (!D.dev) return;
@@ -698,6 +786,7 @@ function show(name) {
   NAV.forEach((g, i) => { if (g.includes(name)) navLast[i] = name; });
   // On the Moss tab a downward drag would also pull the whole mini app shut: switch Telegram's swipe-to-close off there.
   try { if (name === 'moss') tg.disableVerticalSwipes(); else tg.enableVerticalSwipes(); } catch (e) {}
+  if (name === 'connect') { connectTab(); cxPoll(); }
   closeMenu();
   drawNav();
   window.scrollTo(0, 0);
@@ -871,16 +960,36 @@ function mossTab() {
 (function mossPlay() {
   const box = $('mossbox'), drag = $('mdrag'), el = $('moss');
   let down = null, dragging = false;
+  // While held, one frame loop eases him towards the finger (pos chases goal) instead of a CSS transition restarting
+  // on every pointermove, which made him stutter. He tilts with his speed, not his offset.
+  const pos = { x: 0, y: 0, s: 1 }, goal = { x: 0, y: 0 };
+  let raf = 0;
+  const frame = () => {
+    const vx = (goal.x - pos.x) * 0.35;
+    pos.x += vx;
+    pos.y += (goal.y - pos.y) * 0.35;
+    pos.s += (0.6 - pos.s) * 0.25;
+    drag.style.transform = 'translate(' + pos.x + 'px,' + pos.y + 'px) rotate(' + Math.max(-12, Math.min(12, vx * 0.6)) + 'deg) scale(' + pos.s + ')';
+    raf = dragging ? requestAnimationFrame(frame) : 0;
+  };
   box.addEventListener('pointermove', (ev) => {
     if (down) {
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
-      if (!dragging && Math.hypot(dx, dy) > 8) { dragging = true; drag.classList.add('held'); mossReact('shocked', 'wheee', 60000); }
+      if (!dragging && Math.hypot(dx, dy) > 8) {
+        dragging = true;
+        Object.assign(pos, { x: 0, y: 0, s: 1 });
+        drag.classList.add('held');
+        el.style.transform = '';
+        ['mp_e1', 'mp_e2'].forEach((id) => ($(id).style.transform = ''));
+        mossReact('shocked', 'wheee', 60000);
+        el.classList.remove('boop');
+        raf = requestAnimationFrame(frame);
+      }
       if (dragging) {
         // Picked up he shrinks to 60%, so he can go anywhere on screen with his whole face still showing.
         const mx = Math.min(innerWidth / 2 - 10, down.w * 0.3 + 6), my = down.h * 0.3 + 16;
-        const cx = Math.max(mx - down.cx, Math.min(innerWidth - mx - down.cx, dx));
-        const cy = Math.max(my - down.cy, Math.min(innerHeight - my - down.cy, dy));
-        drag.style.transform = 'translate(' + cx + 'px,' + cy + 'px) rotate(' + cx / 20 + 'deg) scale(.6)';
+        goal.x = Math.max(mx - down.cx, Math.min(innerWidth - mx - down.cx, dx));
+        goal.y = Math.max(my - down.cy, Math.min(innerHeight - my - down.cy, dy));
         return;
       }
     }
@@ -899,6 +1008,7 @@ function mossTab() {
     down = null;
     if (dragging) {
       dragging = false;
+      cancelAnimationFrame(raf);
       drag.classList.remove('held');
       drag.style.transform = '';
       mossReact('dead', 'put me down gently next time', 1600);
@@ -1254,6 +1364,7 @@ if (tg) { tg.ready(); tg.expand(); if (tg.MainButton) tg.MainButton.onClick(save
 // Refresh when the app comes back into view (e.g. after logging in the chat).
 document.addEventListener('visibilitychange', () => {
   if (!document.hidden && D) call('/api/dash', 'GET').then((d) => { D = d; render(); }).catch(() => {});
+  if (!document.hidden) cxPoll();
 });
 
 Promise.all([call('/api/dash', 'GET'), call('/api/settings', 'GET')]).then(([dash, set]) => {
@@ -1262,8 +1373,9 @@ Promise.all([call('/api/dash', 'GET'), call('/api/settings', 'GET')]).then(([das
   render();
   $('app').classList.remove('hidden');
   $('nav').classList.remove('hidden');
-  const start = location.hash.slice(1);
-  if (['moss', 'today', 'meals', 'progress', 'habits', 'learn', 'settings', 'admin'].includes(start)) show(start);
+  // ?go=<tab> from bot buttons: Telegram puts its own #tgWebAppData=… in the hash, so a #tab from a button is lost.
+  const start = new URLSearchParams(location.search).get('go') || location.hash.slice(1);
+  if (['moss', 'today', 'meals', 'progress', 'habits', 'learn', 'settings', 'admin', 'connect'].includes(start)) show(start);
   if (new URLSearchParams(location.search).get('go') === 'scan') openScanner();
 }).catch((e) => {
   const g = $('gate');
