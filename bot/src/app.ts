@@ -192,7 +192,9 @@ export const APP_HTML = /* html */ `<!doctype html>
   .mossbox { position: relative; height: 330px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 18px; touch-action: none; user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent; }
   .say { position: relative; max-width: 86%; background: var(--card); border-radius: 14px; padding: 8px 14px; font: 600 14px var(--mono); color: var(--text); text-align: center; min-height: 1.45em; }
   .say::after { content: ""; position: absolute; left: 50%; bottom: -7px; width: 14px; height: 14px; margin-left: -7px; background: var(--card); transform: rotate(45deg); border-radius: 2px; }
-  .mdrag { transition: transform .45s cubic-bezier(.2, 1.6, .4, 1); }
+  /* own compositor layers: the drop-shadow moves with him instead of being repainted, which left trails on phones */
+  .mdrag { transition: transform .45s cubic-bezier(.2, 1.6, .4, 1); will-change: transform; }
+  .mdrag .moss { will-change: transform; }
   .mdrag.held { transition: none; position: relative; z-index: 10; }
   /* held: no bobbing, no boop, no eye-lean, so only the drag moves him */
   .mdrag.held .moss { animation: none; transition: none; }
@@ -960,6 +962,7 @@ function mossTab() {
 (function mossPlay() {
   const box = $('mossbox'), drag = $('mdrag'), el = $('moss');
   let down = null, dragging = false;
+  let idleOff = { x: 0, y: 0 }, idleRaf = 0, idleT = 0, lastLook = 0, tiltKey = '';
   // While held, one frame loop eases him towards the finger (pos chases goal) instead of a CSS transition restarting
   // on every pointermove, which made him stutter. He tilts with his speed, not his offset.
   const pos = { x: 0, y: 0, s: 1 }, goal = { x: 0, y: 0 };
@@ -977,7 +980,7 @@ function mossTab() {
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
       if (!dragging && Math.hypot(dx, dy) > 8) {
         dragging = true;
-        Object.assign(pos, { x: 0, y: 0, s: 1 });
+        Object.assign(pos, { x: down.ox, y: down.oy, s: 1 });
         drag.classList.add('held');
         el.style.transform = '';
         ['mp_e1', 'mp_e2'].forEach((id) => ($(id).style.transform = ''));
@@ -988,16 +991,20 @@ function mossTab() {
       if (dragging) {
         // Picked up he shrinks to 60%, so he can go anywhere on screen with his whole face still showing.
         const mx = Math.min(innerWidth / 2 - 10, down.w * 0.3 + 6), my = down.h * 0.3 + 16;
-        goal.x = Math.max(mx - down.cx, Math.min(innerWidth - mx - down.cx, dx));
-        goal.y = Math.max(my - down.cy, Math.min(innerHeight - my - down.cy, dy));
+        goal.x = Math.max(mx - down.cx, Math.min(innerWidth - mx - down.cx, down.ox + dx));
+        goal.y = Math.max(my - down.cy, Math.min(innerHeight - my - down.cy, down.oy + dy));
         return;
       }
     }
+    lastLook = Date.now();
     mossLookAt(ev.clientX, ev.clientY);
   }, { passive: true });
   el.addEventListener('pointerdown', (ev) => {
+    // Grabbed mid-drift or mid-loop: stop the idle move and carry on from where he is. cx/cy = his home centre.
+    stopIdle();
     const r = el.getBoundingClientRect();
-    down = { x: ev.clientX, y: ev.clientY, cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, h: r.height };
+    down = { x: ev.clientX, y: ev.clientY, ox: idleOff.x, oy: idleOff.y, cx: r.left + r.width / 2 - idleOff.x, cy: r.top + r.height / 2 - idleOff.y, w: r.width, h: r.height };
+    idleOff = { x: 0, y: 0 };
     dragging = false;
     el.setPointerCapture(ev.pointerId);
   });
@@ -1022,9 +1029,71 @@ function mossTab() {
   el.addEventListener('pointerup', up);
   el.addEventListener('pointercancel', up);
   // Desktop: follow the pointer anywhere on the page while the tab is open.
-  addEventListener('pointermove', (ev) => { if (tab === 'moss' && !down && ev.pointerType !== 'touch') mossLookAt(ev.clientX, ev.clientY); }, { passive: true });
+  addEventListener('pointermove', (ev) => { if (tab === 'moss' && !down && ev.pointerType !== 'touch') { lastLook = Date.now(); mossLookAt(ev.clientX, ev.clientY); } }, { passive: true });
   // Phones: tilt to make him look around.
-  addEventListener('deviceorientation', (ev) => { if (tab === 'moss' && !down && ev.gamma != null && ev.beta != null) mossLook(ev.gamma * 12, (ev.beta - 45) * 8); });
+  addEventListener('deviceorientation', (ev) => {
+    if (tab !== 'moss' || down || ev.gamma == null || ev.beta == null) return;
+    // Only a real tilt counts, so a phone lying still doesn't pin his eyes and block the idle glances.
+    const k = Math.round(ev.gamma / 4) + ',' + Math.round(ev.beta / 4);
+    if (k === tiltKey) return;
+    tiltKey = k;
+    lastLook = Date.now();
+    mossLook(ev.gamma * 12, (ev.beta - 45) * 8);
+  });
+  // ---- idle: left alone he glances around, drifts about his spot and now and then does a loop ----
+  const free = () => tab === 'moss' && !down && !idleRaf && Date.now() > mossBusy && !mossHover && !document.hidden;
+  function stopIdle() {
+    if (idleRaf) { cancelAnimationFrame(idleRaf); idleRaf = 0; drag.classList.remove('held'); }
+    clearTimeout(idleT);
+  }
+  function glance() {
+    const a = Math.random() * Math.PI * 2;
+    mossLook(Math.cos(a) * 300, Math.sin(a) * 160);
+    idleT = setTimeout(() => {
+      if (Math.random() < 0.4) { mossLook(-Math.cos(a) * 300, Math.sin(a) * 120); idleT = setTimeout(() => mossLook(0, 0), 900); }
+      else mossLook(0, 0);
+    }, 1100);
+  }
+  function drift() {
+    const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
+    const room = Math.max(24, Math.min(90, (b.width - r.width * 0.75) / 2));
+    idleOff = { x: (Math.random() * 2 - 1) * room, y: (Math.random() * 2 - 1) * 26 };
+    drag.style.transform = 'translate(' + idleOff.x + 'px,' + idleOff.y + 'px) rotate(' + idleOff.x / 12 + 'deg)';
+    mossLook(idleOff.x * 4, idleOff.y * 4);
+    idleT = setTimeout(() => {
+      if (down) return;
+      idleOff = { x: 0, y: 0 };
+      drag.style.transform = '';
+      mossLook(0, 0);
+    }, 1800 + Math.random() * 1600);
+  }
+  function loop() {
+    const T = 1500, R = 36, t0 = performance.now();
+    drag.classList.add('held');
+    mossReact('celebrate', ['wheee', 'loop-de-loop', 'did you see that?', 'ten out of ten'][Math.floor(Math.random() * 4)], T + 700);
+    const step = (now) => {
+      const p = Math.min(1, (now - t0) / T);
+      const q = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+      const a = q * Math.PI * 2;
+      drag.style.transform = 'translate(' + R * Math.sin(a) + 'px,' + -R * (1 - Math.cos(a)) + 'px) rotate(' + q * 360 + 'deg)';
+      if (p < 1) { idleRaf = requestAnimationFrame(step); return; }
+      idleRaf = 0;
+      drag.classList.remove('held');
+      drag.style.transform = '';
+    };
+    idleRaf = requestAnimationFrame(step);
+  }
+  (function idle() {
+    setTimeout(() => {
+      if (free() && !mossReduced) {
+        const r = Math.random();
+        if (r < 0.45) { if (Date.now() - lastLook > 2500) glance(); }
+        else if (r < 0.8) drift();
+        else loop();
+      }
+      idle();
+    }, 3500 + Math.random() * 4000);
+  })();
   // Blink now and then, unless he's mid-reaction.
   (function blink() {
     if (tab === 'moss' && Date.now() > mossBusy && !mossHover) { mossFace('blink'); setTimeout(() => Date.now() > mossBusy && mossRest(), 140); }
