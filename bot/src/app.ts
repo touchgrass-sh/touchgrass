@@ -962,7 +962,7 @@ function mossTab() {
 (function mossPlay() {
   const box = $('mossbox'), drag = $('mdrag'), el = $('moss');
   let down = null, dragging = false;
-  let idleOff = { x: 0, y: 0 }, idleRaf = 0, idleT = 0, lastLook = 0, tiltKey = '';
+  let idleRaf = 0, idleT = 0, lastLook = 0, tiltKey = '';
   // While held, one frame loop eases him towards the finger (pos chases goal) instead of a CSS transition restarting
   // on every pointermove, which made him stutter. He tilts with his speed, not his offset.
   const pos = { x: 0, y: 0, s: 1 }, goal = { x: 0, y: 0 };
@@ -980,7 +980,7 @@ function mossTab() {
       const dx = ev.clientX - down.x, dy = ev.clientY - down.y;
       if (!dragging && Math.hypot(dx, dy) > 8) {
         dragging = true;
-        Object.assign(pos, { x: down.ox, y: down.oy, s: 1 });
+        Object.assign(pos, { x: 0, y: 0, s: 1 });
         drag.classList.add('held');
         el.style.transform = '';
         ['mp_e1', 'mp_e2'].forEach((id) => ($(id).style.transform = ''));
@@ -991,8 +991,8 @@ function mossTab() {
       if (dragging) {
         // Picked up he shrinks to 60%, so he can go anywhere on screen with his whole face still showing.
         const mx = Math.min(innerWidth / 2 - 10, down.w * 0.3 + 6), my = down.h * 0.3 + 16;
-        goal.x = Math.max(mx - down.cx, Math.min(innerWidth - mx - down.cx, down.ox + dx));
-        goal.y = Math.max(my - down.cy, Math.min(innerHeight - my - down.cy, down.oy + dy));
+        goal.x = Math.max(mx - down.cx, Math.min(innerWidth - mx - down.cx, dx));
+        goal.y = Math.max(my - down.cy, Math.min(innerHeight - my - down.cy, dy));
         return;
       }
     }
@@ -1000,11 +1000,11 @@ function mossTab() {
     mossLookAt(ev.clientX, ev.clientY);
   }, { passive: true });
   el.addEventListener('pointerdown', (ev) => {
-    // Grabbed mid-drift or mid-loop: stop the idle move and carry on from where he is. cx/cy = his home centre.
+    // Grabbed mid-set: stop the workout and pick him up from his spot.
     stopIdle();
+    drag.style.transform = '';
     const r = el.getBoundingClientRect();
-    down = { x: ev.clientX, y: ev.clientY, ox: idleOff.x, oy: idleOff.y, cx: r.left + r.width / 2 - idleOff.x, cy: r.top + r.height / 2 - idleOff.y, w: r.width, h: r.height };
-    idleOff = { x: 0, y: 0 };
+    down = { x: ev.clientX, y: ev.clientY, cx: r.left + r.width / 2, cy: r.top + r.height / 2, w: r.width, h: r.height };
     dragging = false;
     el.setPointerCapture(ev.pointerId);
   });
@@ -1040,7 +1040,7 @@ function mossTab() {
     lastLook = Date.now();
     mossLook(ev.gamma * 12, (ev.beta - 45) * 8);
   });
-  // ---- idle: left alone he glances around, drifts about his spot and now and then does a loop ----
+  // ---- idle: left alone he glances around and now and then does a short workout set (user 2026-10-29: no loops, no drifting) ----
   const free = () => tab === 'moss' && !down && !idleRaf && Date.now() > mossBusy && !mossHover && !document.hidden;
   function stopIdle() {
     if (idleRaf) { cancelAnimationFrame(idleRaf); idleRaf = 0; drag.classList.remove('held'); }
@@ -1054,42 +1054,60 @@ function mossTab() {
       else mossLook(0, 0);
     }, 1100);
   }
-  function drift() {
-    const b = box.getBoundingClientRect(), r = el.getBoundingClientRect();
-    const room = Math.max(24, Math.min(90, (b.width - r.width * 0.75) / 2));
-    idleOff = { x: (Math.random() * 2 - 1) * room, y: (Math.random() * 2 - 1) * 26 };
-    drag.style.transform = 'translate(' + idleOff.x + 'px,' + idleOff.y + 'px) rotate(' + idleOff.x / 12 + 'deg)';
-    mossLook(idleOff.x * 4, idleOff.y * 4);
-    idleT = setTimeout(() => {
-      if (down) return;
-      idleOff = { x: 0, y: 0 };
-      drag.style.transform = '';
-      mossLook(0, 0);
-    }, 1800 + Math.random() * 1600);
-  }
-  function loop() {
-    const T = 1500, R = 36, t0 = performance.now();
+  // Workouts: each move is a per-rep shape over p (0→1 within a rep, n = rep number) giving
+  // [x, y, scaleX, scaleY, rotate], plus the face for that moment and his hand-over lines.
+  const MOVES = [
+    { name: 'squat', reps: 3, T: 780, face: () => 'flex', end: ['your turn', 'now you. 3 squats.', 'easy. your go.'],
+      f: (p) => { const d = Math.sin(p * Math.PI); return [0, d * 24, 1 + d * 0.1, 1 - d * 0.18, 0]; } },
+    { name: 'jumping jack', reps: 4, T: 640, face: (p) => (p < 0.5 ? 'celebrate' : 'idle'), end: ['your turn. 10 jacks.', 'now you', 'jacks done. your go.'],
+      f: (p) => { const d = Math.sin(p * Math.PI); return [0, -d * 30, 1 + d * 0.08, 1 - d * 0.04, 0]; } },
+    { name: 'hop', reps: 6, T: 420, face: () => 'happy', end: ['boing. your go.', 'hop to it', 'skipping rope next?'],
+      f: (p) => { const d = Math.sin(p * Math.PI), g = Math.max(0, 1 - d * 4); return [0, -d * 24, 1 + g * 0.08, 1 - g * 0.1, 0]; } },
+    { name: 'lunge', reps: 4, T: 900, face: () => 'flex', end: ['legs: on fire. yours next.', 'now you, 4 each side'],
+      f: (p, n) => { const d = Math.sin(p * Math.PI), s = n % 2 ? 1 : -1; return [s * d * 34, d * 14, 1, 1 - d * 0.08, s * d * 6]; } },
+    { name: 'twist', reps: 4, T: 700, face: () => 'done', end: ['loosen up. your turn.', 'spine says thanks'],
+      f: (p, n) => { const d = Math.sin(p * Math.PI), s = n % 2 ? 1 : -1; return [s * d * 8, 0, 1 - d * 0.12, 1, s * d * 16]; } },
+    { name: 'burpee', reps: 2, T: 1300, face: (p) => (p < 0.45 ? 'angry' : 'celebrate'), end: ['2 burpees. beat that.', 'burpees. you are welcome.'],
+      f: (p) => {
+        if (p < 0.4) { const d = Math.sin((p / 0.4) * Math.PI / 2); return [0, d * 28, 1 + d * 0.14, 1 - d * 0.26, 0]; }
+        const q = (p - 0.4) / 0.6, j = Math.sin(q * Math.PI), dn = 1 - Math.min(1, q * 4);
+        return [0, dn * 28 - j * 40, 1 + dn * 0.14, 1 - dn * 0.26 + j * 0.05, 0];
+      } },
+  ];
+  let lastMove = -1;
+  // One set: he counts reps in the bubble, then hands it over to you with a proud face.
+  function workout() {
+    let i = Math.floor(Math.random() * MOVES.length);
+    if (i === lastMove) i = (i + 1) % MOVES.length;
+    lastMove = i;
+    const m = MOVES[i], t0 = performance.now();
+    let rep = -1, face = '';
     drag.classList.add('held');
-    mossReact('celebrate', ['wheee', 'loop-de-loop', 'did you see that?', 'ten out of ten'][Math.floor(Math.random() * 4)], T + 700);
+    mossBusy = Date.now() + m.reps * m.T + 2000;
+    clearTimeout(mossTimer);
     const step = (now) => {
-      const p = Math.min(1, (now - t0) / T);
-      const q = p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
-      const a = q * Math.PI * 2;
-      drag.style.transform = 'translate(' + R * Math.sin(a) + 'px,' + -R * (1 - Math.cos(a)) + 'px) rotate(' + q * 360 + 'deg)';
-      if (p < 1) { idleRaf = requestAnimationFrame(step); return; }
-      idleRaf = 0;
-      drag.classList.remove('held');
-      drag.style.transform = '';
+      const t = (now - t0) / m.T, n = Math.floor(t), p = t - n;
+      if (n >= m.reps) {
+        idleRaf = 0;
+        drag.classList.remove('held');
+        drag.style.transform = '';
+        mossReact('proud', m.end[Math.floor(Math.random() * m.end.length)], 2000);
+        return;
+      }
+      if (n !== rep) { rep = n; $('moss_say').textContent = m.name + ' ' + (n + 1) + '…'; }
+      const f = m.face(p, n);
+      if (f !== face) { face = f; mossFace(f); }
+      const v = m.f(p, n);
+      drag.style.transform = 'translate(' + v[0] + 'px,' + v[1] + 'px) rotate(' + v[4] + 'deg) scale(' + v[2] + ',' + v[3] + ')';
+      idleRaf = requestAnimationFrame(step);
     };
     idleRaf = requestAnimationFrame(step);
   }
   (function idle() {
     setTimeout(() => {
       if (free() && !mossReduced) {
-        const r = Math.random();
-        if (r < 0.45) { if (Date.now() - lastLook > 2500) glance(); }
-        else if (r < 0.8) drift();
-        else loop();
+        if (Math.random() < 0.65) { if (Date.now() - lastLook > 2500) glance(); }
+        else workout();
       }
       idle();
     }, 3500 + Math.random() * 4000);
